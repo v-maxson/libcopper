@@ -1,0 +1,23 @@
+#ifndef __LIBCOPPER_VERSION_H__
+#define __LIBCOPPER_VERSION_H__
+
+#define COPPER_VER_MAJOR @VERSION_MAJOR@
+#define COPPER_VER_MINOR @VERSION_MINOR@
+#define COPPER_VER_PATCH @VERSION_PATCH@
+#define COPPER_VER_STR "@VERSION_MAJOR@.@VERSION_MINOR@.@VERSION_PATCH@"
+
+typedef struct copper_version {
+    int major;
+    int minor;
+    int patch;
+} copper_version;
+
+inline copper_version get_copper_version() {
+    copper_version ver;
+    ver.major = COPPER_VER_MAJOR;
+    ver.minor = COPPER_VER_MINOR;
+    ver.patch = COPPER_VER_PATCH;
+    return ver;
+}
+
+#endif

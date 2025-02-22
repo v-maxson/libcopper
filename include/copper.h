@@ -4,6 +4,7 @@
 #include "version.h"
 
 #include "private/arena.h"
+#include "private/dynarr.h"
 #include "private/string.h"
 
 #endif

@@ -1,6 +1,10 @@
 #ifndef __LIBCOPPER_VERSION_H__
 #define __LIBCOPPER_VERSION_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define COPPER_VER_MAJOR @VERSION_MAJOR@
 #define COPPER_VER_MINOR @VERSION_MINOR@
 #define COPPER_VER_PATCH @VERSION_PATCH@
@@ -19,5 +23,9 @@ inline copper_version get_copper_version() {
     ver.patch = COPPER_VER_PATCH;
     return ver;
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -1,6 +1,10 @@
 #ifndef __LIBCOPPER_STRING_H__
 #define __LIBCOPPER_STRING_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdarg.h>
 
 #ifndef vasprintf
@@ -25,6 +29,10 @@ int vasprintf(char **strp, const char *fmt, va_list ap);
 /// @param ... The arguments to be formatted.
 /// @return The number of characters written to the string. -1 if an error occurred.
 int asprintf(char **strp, const char *fmt, ...);
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif

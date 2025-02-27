@@ -1,6 +1,10 @@
 #ifndef __LIBCOPPER_ARENA_H__
 #define __LIBCOPPER_ARENA_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stddef.h>
 
 #ifndef COPPER_NO_SHORT_NAMES
@@ -64,5 +68,9 @@ void copper_ardtor(copper_arena *ar);
 /// @param size The size of the memory to allocate.
 /// @return A pointer to the allocated memory. NULL if an error occurred.
 void *copper_armalloc(copper_arena *ar, size_t size);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

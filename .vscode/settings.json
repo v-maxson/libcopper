@@ -1,0 +1,12 @@
+{
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/build/**": true,
+        "**/.cache/**": true,
+        "**/.vscode/**": true,
+        "**/.clang-format": true,
+        "**/.gitignore": true
+    },
+}

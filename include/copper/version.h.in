@@ -1,0 +1,6 @@
+#ifndef __COPPER_VERSION_H__
+#define __COPPER_VERSION_H__
+
+#define COPPER_VERSION "@PROJECT_VERSION@"
+
+#endif

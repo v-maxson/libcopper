@@ -140,6 +140,8 @@ CPR_API CprResult cpr_condvar_init(CprCondVar *condvar)
 		       CPR_OK :
 		       CPR_ERR_INVALID;
 #endif
+
+	return CPR_OK;
 }
 
 CPR_API void cpr_condvar_destroy(CprCondVar *condvar)

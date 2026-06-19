@@ -5,15 +5,17 @@
 #if defined(CPR_PLATFORM_WINDOWS)
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#elif defined(CPR_PLATFORM_UNIX)
+#elif defined(CPR_PLATFORM_UNIX) || defined(CPR_PLATFORM_APPLE)
 #include <errno.h> // IWYU pragma: keep
 #include <pthread.h>
 #endif
 
+/// --- Mutex ---
+
 typedef struct {
 #if defined(CPR_PLATFORM_WINDOWS)
 	CRITICAL_SECTION handle;
-#elif defined(CPR_PLATFORM_UNIX)
+#elif defined(CPR_PLATFORM_UNIX) || defined(CPR_PLATFORM_APPLE)
 	pthread_mutex_t handle;
 #endif
 } CprInternalMutex;
@@ -34,7 +36,7 @@ CprResult cpr_mutex_init(CprMutex *mutex)
 
 #if defined(CPR_PLATFORM_WINDOWS)
 	InitializeCriticalSection(&cpr__cast_mutex(mutex)->handle);
-#elif defined(CPR_PLATFORM_UNIX)
+#elif defined(CPR_PLATFORM_UNIX) || defined(CPR_PLATFORM_APPLE)
 	return pthread_mutex_init(&cpr__cast_mutex(mutex)->handle, NULL) == 0 ?
 		       CPR_OK :
 		       CPR_ERR_INVALID;
@@ -50,7 +52,7 @@ void cpr_mutex_destroy(CprMutex *mutex)
 
 #if defined(CPR_PLATFORM_WINDOWS)
 	DeleteCriticalSection(&cpr__cast_mutex(mutex)->handle);
-#elif defined(CPR_PLATFORM_UNIX)
+#elif defined(CPR_PLATFORM_UNIX) || defined(CPR_PLATFORM_APPLE)
 	pthread_mutex_destroy(&cpr__cast_mutex(mutex)->handle);
 #endif
 }
@@ -62,7 +64,7 @@ CprResult cpr_mutex_lock(CprMutex *mutex)
 
 #if defined(CPR_PLATFORM_WINDOWS)
 	EnterCriticalSection(&cpr__cast_mutex(mutex)->handle);
-#elif defined(CPR_PLATFORM_UNIX)
+#elif defined(CPR_PLATFORM_UNIX) || defined(CPR_PLATFORM_APPLE)
 	return pthread_mutex_lock(&cpr__cast_mutex(mutex)->handle) == 0 ?
 		       CPR_OK :
 		       CPR_ERR_INVALID;
@@ -80,7 +82,7 @@ CprResult cpr_mutex_trylock(CprMutex *mutex)
 	return TryEnterCriticalSection(&cpr__cast_mutex(mutex)->handle) ?
 		       CPR_OK :
 		       CPR_ERR_BUSY;
-#elif defined(CPR_PLATFORM_UNIX)
+#elif defined(CPR_PLATFORM_UNIX) || defined(CPR_PLATFORM_APPLE)
 	int r = pthread_mutex_trylock(&cpr__cast_mutex(mutex)->handle);
 	if (r == 0)
 		return CPR_OK;
@@ -97,7 +99,7 @@ CprResult cpr_mutex_unlock(CprMutex *mutex)
 
 #if defined(CPR_PLATFORM_WINDOWS)
 	LeaveCriticalSection(&cpr__cast_mutex(mutex)->handle);
-#elif defined(CPR_PLATFORM_UNIX)
+#elif defined(CPR_PLATFORM_UNIX) || defined(CPR_PLATFORM_APPLE)
 	return pthread_mutex_unlock(&cpr__cast_mutex(mutex)->handle) == 0 ?
 		       CPR_OK :
 		       CPR_ERR_INVALID;

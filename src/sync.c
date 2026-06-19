@@ -39,7 +39,7 @@ CprResult cpr_mutex_init(CprMutex *mutex)
 #elif defined(CPR_PLATFORM_UNIX) || defined(CPR_PLATFORM_APPLE)
 	return pthread_mutex_init(&cpr__cast_mutex(mutex)->handle, NULL) == 0 ?
 		       CPR_OK :
-		       CPR_ERR_INVALID;
+		       CPR_ERR_SYNC;
 #endif
 
 	return CPR_OK;
@@ -67,7 +67,7 @@ CprResult cpr_mutex_lock(CprMutex *mutex)
 #elif defined(CPR_PLATFORM_UNIX) || defined(CPR_PLATFORM_APPLE)
 	return pthread_mutex_lock(&cpr__cast_mutex(mutex)->handle) == 0 ?
 		       CPR_OK :
-		       CPR_ERR_INVALID;
+		       CPR_ERR_SYNC;
 #endif
 
 	return CPR_OK;
@@ -88,7 +88,7 @@ CprResult cpr_mutex_trylock(CprMutex *mutex)
 		return CPR_OK;
 	if (r == EBUSY)
 		return CPR_ERR_BUSY;
-	return CPR_ERR_INVALID;
+	return CPR_ERR_SYNC;
 #endif
 }
 
@@ -102,7 +102,7 @@ CprResult cpr_mutex_unlock(CprMutex *mutex)
 #elif defined(CPR_PLATFORM_UNIX) || defined(CPR_PLATFORM_APPLE)
 	return pthread_mutex_unlock(&cpr__cast_mutex(mutex)->handle) == 0 ?
 		       CPR_OK :
-		       CPR_ERR_INVALID;
+		       CPR_ERR_SYNC;
 #endif
 
 	return CPR_OK;
@@ -138,7 +138,7 @@ CPR_API CprResult cpr_condvar_init(CprCondVar *condvar)
 	return pthread_cond_init(&cpr__cast_condvar(condvar)->handle, NULL) ==
 			       0 ?
 		       CPR_OK :
-		       CPR_ERR_INVALID;
+		       CPR_ERR_SYNC;
 #endif
 
 	return CPR_OK;
@@ -166,12 +166,12 @@ CPR_API CprResult cpr_condvar_wait(CprCondVar *condvar, CprMutex *mutex)
 					&cpr__cast_mutex(mutex)->handle,
 					INFINITE) ?
 		       CPR_OK :
-		       CPR_ERR_INVALID;
+		       CPR_ERR_SYNC;
 #elif defined(CPR_PLATFORM_UNIX) || defined(CPR_PLATFORM_APPLE)
 	return pthread_cond_wait(&cpr__cast_condvar(condvar)->handle,
 				 &cpr__cast_mutex(mutex)->handle) == 0 ?
 		       CPR_OK :
-		       CPR_ERR_INVALID;
+		       CPR_ERR_SYNC;
 #endif
 }
 
@@ -185,7 +185,7 @@ CPR_API CprResult cpr_condvar_signal(CprCondVar *condvar)
 #elif defined(CPR_PLATFORM_UNIX) || defined(CPR_PLATFORM_APPLE)
 	return pthread_cond_signal(&cpr__cast_condvar(condvar)->handle) == 0 ?
 		       CPR_OK :
-		       CPR_ERR_INVALID;
+		       CPR_ERR_SYNC;
 #endif
 
 	return CPR_OK;
@@ -202,7 +202,7 @@ CPR_API CprResult cpr_condvar_broadcast(CprCondVar *condvar)
 	return pthread_cond_broadcast(&cpr__cast_condvar(condvar)->handle) ==
 			       0 ?
 		       CPR_OK :
-		       CPR_ERR_INVALID;
+		       CPR_ERR_SYNC;
 #endif
 
 	return CPR_OK;

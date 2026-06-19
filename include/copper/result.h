@@ -10,7 +10,8 @@
 	CODE(CPR_ERR_IO, -5)        \
 	CODE(CPR_ERR_EXHAUSTED, -6) \
 	CODE(CPR_ERR_ALIGN, -7)     \
-	CODE(CPR_ERR_BUSY, -8)
+	CODE(CPR_ERR_BUSY, -8)      \
+	CODE(CPR_ERR_SYNC, -9)
 
 typedef int CprResult;
 

@@ -102,4 +102,6 @@ CprResult cpr_mutex_unlock(CprMutex *mutex)
 		       CPR_OK :
 		       CPR_ERR_INVALID;
 #endif
+
+	return CPR_OK;
 }

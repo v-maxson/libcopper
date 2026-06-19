@@ -1,6 +1,5 @@
-#include "copper/arena.h"
-#include "copper/result.h"
 #include "unity.h"
+#include <copper/copper.h>
 #include <string.h>
 
 void setUp(void)

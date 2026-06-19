@@ -1,5 +1,5 @@
-#include "copper/copper.h"
 #include "unity.h"
+#include <copper/copper.h>
 
 void setUp(void)
 {

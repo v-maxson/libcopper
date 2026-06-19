@@ -1,7 +1,5 @@
-#include "copper/platform.h" // IWYU pragma: keep
-#include "copper/result.h"
-#include "copper/sync.h"
 #include "unity.h"
+#include <copper/copper.h>
 
 #if defined(CPR_PLATFORM_WINDOWS)
 #define WIN32_LEAN_AND_MEAN

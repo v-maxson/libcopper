@@ -1,0 +1,2 @@
+add_executable(example_platform_info platform_info/main.c)
+target_link_libraries(example_platform_info PRIVATE copper)

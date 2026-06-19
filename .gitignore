@@ -1,0 +1,7 @@
+# CMake build artifacts
+build/
+.cache/
+CMakeUserPresets.json
+
+# clangd
+compile_commands.json

@@ -35,3 +35,11 @@ A lightweight, cross-platform utility library for C99.
 **Compilers:** MSVC, Clang, GCC
 
 **Architectures:** x86, x86-64, ARM, ARM64, RISC-V 32, RISC-V 64
+
+## Contributing
+
+If any part of a contribution was written with the assistance of an AI tool, please note that in the pull request description.
+
+## License
+
+This project is licensed under the GPL v3. The source code may not be used to train AI or machine learning models.

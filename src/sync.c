@@ -107,3 +107,101 @@ CprResult cpr_mutex_unlock(CprMutex *mutex)
 
 	return CPR_OK;
 }
+
+// --- Condition Variable ---
+
+typedef struct {
+#if defined(CPR_PLATFORM_WINDOWS)
+	CONDITION_VARIABLE handle;
+#elif defined(CPR_PLATFORM_UNIX) || defined(CPR_PLATFORM_APPLE)
+	pthread_cond_t handle;
+#endif
+} CprInternalCondVar;
+
+// fails to build if the condvar is ever larger then CPR_CONDVAR_STORAGE_SIZE
+typedef uint8_t cpr__condvar_size_check
+	[sizeof(CprInternalCondVar) <= CPR_CONDVAR_STORAGE_SIZE ? 1 : -1];
+
+CPR_INLINE static CprInternalCondVar *cpr__cast_condvar(CprCondVar *condvar)
+{
+	return (CprInternalCondVar *)condvar->_internal.storage;
+}
+
+CPR_API CprResult cpr_condvar_init(CprCondVar *condvar)
+{
+	if (condvar == NULL)
+		return CPR_ERR_INVALID;
+
+#if defined(CPR_PLATFORM_WINDOWS)
+	InitializeConditionVariable(&cpr__cast_condvar(condvar)->handle);
+#elif defined(CPR_PLATFORM_UNIX) || defined(CPR_PLATFORM_APPLE)
+	return pthread_cond_init(&cpr__cast_condvar(condvar)->handle, NULL) ==
+			       0 ?
+		       CPR_OK :
+		       CPR_ERR_INVALID;
+#endif
+}
+
+CPR_API void cpr_condvar_destroy(CprCondVar *condvar)
+{
+	if (condvar == NULL)
+		return;
+
+#if defined(CPR_PLATFORM_WINDOWS)
+	(void)condvar; // no cleanup here
+#elif defined(CPR_PLATFORM_UNIX) || defined(CPR_PLATFORM_APPLE)
+	pthread_cond_destroy(&cpr__cast_condvar(condvar)->handle);
+#endif
+}
+
+CPR_API CprResult cpr_condvar_wait(CprCondVar *condvar, CprMutex *mutex)
+{
+	if (condvar == NULL)
+		return CPR_ERR_INVALID;
+
+#if defined(CPR_PLATFORM_WINDOWS)
+	return SleepConditionVariableCS(&cpr__cast_condvar(condvar)->handle,
+					&cpr__cast_mutex(mutex)->handle,
+					INFINITE) ?
+		       CPR_OK :
+		       CPR_ERR_INVALID;
+#elif defined(CPR_PLATFORM_UNIX) || defined(CPR_PLATFORM_APPLE)
+	return pthread_cond_wait(&cpr__cast_condvar(condvar)->handle,
+				 &cpr__cast_mutex(mutex)->handle) == 0 ?
+		       CPR_OK :
+		       CPR_ERR_INVALID;
+#endif
+}
+
+CPR_API CprResult cpr_condvar_signal(CprCondVar *condvar)
+{
+	if (condvar == NULL)
+		return CPR_ERR_INVALID;
+
+#if defined(CPR_PLATFORM_WINDOWS)
+	WakeConditionVariable(&cpr__cast_condvar(condvar)->handle);
+#elif defined(CPR_PLATFORM_UNIX) || defined(CPR_PLATFORM_APPLE)
+	return pthread_cond_signal(&cpr__cast_condvar(condvar)->handle) == 0 ?
+		       CPR_OK :
+		       CPR_ERR_INVALID;
+#endif
+
+	return CPR_OK;
+}
+
+CPR_API CprResult cpr_condvar_broadcast(CprCondVar *condvar)
+{
+	if (condvar == NULL)
+		return CPR_ERR_INVALID;
+
+#if defined(CPR_PLATFORM_WINDOWS)
+	WakeAllConditionVariable(&cpr__cast_condvar(condvar)->handle);
+#elif defined(CPR_PLATFORM_UNIX) || defined(CPR_PLATFORM_APPLE)
+	return pthread_cond_broadcast(&cpr__cast_condvar(condvar)->handle) ==
+			       0 ?
+		       CPR_OK :
+		       CPR_ERR_INVALID;
+#endif
+
+	return CPR_OK;
+}

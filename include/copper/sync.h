@@ -35,4 +35,38 @@ CPR_API CprResult cpr_mutex_unlock(CprMutex *mutex);
 }
 #endif
 
+// --- Condition Variable ---
+
+#define CPR_CONDVAR_STORAGE_SIZE \
+	48 // defined as the largest possible size of a condition variable across all platforms (48 bytes on macOS/iOS)
+
+typedef struct {
+	union {
+		uint8_t storage[CPR_CONDVAR_STORAGE_SIZE];
+		CprMaxAlign _align;
+	} _internal;
+} CprCondVar;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+CPR_API CprResult cpr_condvar_init(CprCondVar *condvar);
+CPR_API void cpr_condvar_destroy(CprCondVar *condvar);
+
+/// Releases `mutex` and blocks until signaled or broadcast.
+/// Reacquires `mutex` before returning.
+/// This can and will return spuriosly, *ALWAYS* recheck the condition.
+CPR_API CprResult cpr_condvar_wait(CprCondVar *condvar, CprMutex *mutex);
+
+/// Wakes one thread waiting on `condvar`. Safe to call with or without the mutex held.
+CPR_API CprResult cpr_condvar_signal(CprCondVar *condvar);
+
+/// Wakes all threads waiting on `condvar`. Safe to call with or without the mutex held.
+CPR_API CprResult cpr_condvar_broadcast(CprCondVar *condvar);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif // CPR_SYNC_H

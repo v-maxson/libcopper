@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux
+          - { name: "Linux / GCC / Debug",     os: ubuntu-latest,  build_type: Debug,   configure_flags: "-DCMAKE_C_COMPILER=gcc"   }
+          - { name: "Linux / GCC / Release",   os: ubuntu-latest,  build_type: Release, configure_flags: "-DCMAKE_C_COMPILER=gcc"   }
+          - { name: "Linux / Clang / Debug",   os: ubuntu-latest,  build_type: Debug,   configure_flags: "-DCMAKE_C_COMPILER=clang" }
+          - { name: "Linux / Clang / Release", os: ubuntu-latest,  build_type: Release, configure_flags: "-DCMAKE_C_COMPILER=clang" }
+
+          # macOS
+          - { name: "macOS / Clang / Debug",   os: macos-latest,   build_type: Debug,   configure_flags: "" }
+          - { name: "macOS / Clang / Release", os: macos-latest,   build_type: Release, configure_flags: "" }
+
+          # Windows — MSVC (multi-config generator; CMAKE_BUILD_TYPE is redundant but harmless)
+          - { name: "Windows / MSVC / Debug",    os: windows-latest, build_type: Debug,   configure_flags: "" }
+          - { name: "Windows / MSVC / Release",  os: windows-latest, build_type: Release, configure_flags: "" }
+
+          # Windows — MinGW (single-config; needs MinGW on PATH and an explicit generator)
+          - { name: "Windows / MinGW / Debug",   os: windows-latest, build_type: Debug,   configure_flags: "-G 'MinGW Makefiles' -DCMAKE_C_COMPILER=gcc", add_mingw: true }
+          - { name: "Windows / MinGW / Release", os: windows-latest, build_type: Release, configure_flags: "-G 'MinGW Makefiles' -DCMAKE_C_COMPILER=gcc", add_mingw: true }
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Put MinGW ahead of MSVC on PATH so CMake picks up the right compiler.
+      # Only needed for the MinGW entries; MSVC entries leave PATH unchanged.
+      - name: Add MinGW to PATH
+        if: matrix.add_mingw
+        run: echo "C:/msys64/mingw64/bin" >> $GITHUB_PATH
+        shell: bash
+
+      # Cache the FetchContent downloads (Unity) so they aren't re-fetched every run.
+      - name: Cache build dependencies
+        uses: actions/cache@v4
+        with:
+          path: build/_deps
+          key: ${{ runner.os }}-deps-${{ hashFiles('**/CMakeLists.txt') }}
+          restore-keys: ${{ runner.os }}-deps-
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} ${{ matrix.configure_flags }}
+        shell: bash
+
+      - name: Build
+        run: cmake --build build --config ${{ matrix.build_type }}
+        shell: bash
+
+      - name: Test
+        run: ctest --test-dir build -C ${{ matrix.build_type }} --output-on-failure
+        shell: bash

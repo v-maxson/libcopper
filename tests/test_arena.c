@@ -71,6 +71,14 @@ void test_init_success(void)
 
 // --- Allocation ---
 
+void test_alloc_null_arena(void)
+{
+	CprResult res;
+	void *ptr = cpr_arena_alloc(NULL, 16, &res);
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, res);
+	TEST_ASSERT_NULL(ptr);
+}
+
 void test_alloc_returns_non_null(void)
 {
 	CprArena arena;
@@ -261,6 +269,7 @@ int main(void)
 	RUN_TEST(test_init_zero_capacity);
 	RUN_TEST(test_init_success);
 
+	RUN_TEST(test_alloc_null_arena);
 	RUN_TEST(test_alloc_returns_non_null);
 	RUN_TEST(test_alloc_advances_offset);
 	RUN_TEST(test_alloc_memory_is_writable);

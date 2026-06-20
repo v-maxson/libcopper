@@ -70,22 +70,50 @@ __attribute__((noinline)) static void cpr__slow_path(void) { ... }
 
 - Every public API must compile on **Windows (MSVC & MinGW), macOS, Linux,
   FreeBSD, Android, and iOS** unless a feature is genuinely unavailable there.
-- When a feature cannot be provided on a platform, either provide a functioning alternative
-  or **exclude its declaration** with a preprocessor guard rather than providing a stub that silently fails.
-
-```c
-/* Good — absent on Windows, but cleanly excluded */
-#if defined(CPR_PLATFORM_UNIX)
-CPR_API int cpr_fd_set_nonblock(int fd);
-#endif
-```
-
 - Use `CPR_API` on every public function/variable declaration so that shared
   library builds export symbols correctly on all platforms.
 - Avoid POSIX-only headers (`<unistd.h>`, `<sys/types.h>`, …) in public headers;
   confine them to platform-guarded `.c` files.
 - Do not assume a fixed pointer or `long` width; use `<stdint.h>` types
   (`uint32_t`, `uintptr_t`, …) for sized arithmetic.
+
+### Opaque storage sizing
+
+Types that wrap a platform-specific handle (mutexes, condition variables, etc.) use a
+fixed-size byte array in their public struct so callers can embed them by value without
+including any platform headers. The storage size must be large enough to hold the
+internal implementation on **every supported platform** — use the worst-case platform as
+the floor, not the average.
+
+Always add a compile-time size check immediately after the internal typedef in the `.c`
+file so that adding a new platform or growing an internal type causes a build failure
+rather than silent memory corruption:
+
+```c
+typedef uint8_t cpr__mutex_size_check
+    [sizeof(CprInternalMutex) <= CPR_MUTEX_STORAGE_SIZE ? 1 : -1];
+```
+
+### Platform fallbacks
+
+When a feature has no native implementation on a platform, prefer providing a fallback
+built from other Copper primitives over excluding the feature entirely. A fallback that
+is correct but slower is better than no API at all. The read-write lock, for example,
+falls back to a `CprMutex` + `CprCondVar` on platforms without `pthread_rwlock_t`.
+
+When no reasonable fallback exists, **exclude the declaration** with a preprocessor
+guard. A clean compile error is always preferable to a stub that silently fails or
+returns wrong results.
+
+```c
+/* Good — excluded cleanly when unavailable */
+#if defined(CPR_PLATFORM_UNIX)
+CPR_API int cpr_fd_set_nonblock(int fd);
+#endif
+
+/* Bad — silently wrong */
+CPR_API int cpr_fd_set_nonblock(int fd) { return CPR_ERR_NOT_FOUND; }
+```
 
 ## Header documentation
 

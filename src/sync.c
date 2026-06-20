@@ -1,5 +1,6 @@
 #include "copper/sync.h"
 #include "copper/result.h"
+#include <stdbool.h>
 
 // --- Platform Includes ---
 #if defined(CPR_PLATFORM_WINDOWS)
@@ -203,6 +204,274 @@ CPR_API CprResult cpr_condvar_broadcast(CprCondVar *condvar)
 			       0 ?
 		       CPR_OK :
 		       CPR_ERR_SYNC;
+#endif
+
+	return CPR_OK;
+}
+
+// --- Read-Write Lock ---
+
+typedef struct {
+#if defined(CPR_PLATFORM_WINDOWS)
+	SRWLOCK handle;
+#elif (defined(CPR_PLATFORM_UNIX) || defined(CPR_PLATFORM_APPLE)) && \
+	defined(CPR_HAS_PTHREAD_RWLOCK)
+	pthread_rwlock_t handle;
+#else
+	CprMutex mutex;
+	CprCondVar condvar;
+	int32_t readers;
+	bool writer;
+#endif
+} CprInternalRwLock;
+
+typedef uint8_t cpr__rwlock_size_check
+	[sizeof(CprInternalRwLock) <= CPR_RWLOCK_STORAGE_SIZE ? 1 : -1];
+
+CPR_INLINE static CprInternalRwLock *cpr__cast_rwlock(CprRwLock *rwlock)
+{
+	return (CprInternalRwLock *)rwlock->_internal.storage;
+}
+
+CPR_API CprResult cpr_rwlock_init(CprRwLock *rwlock)
+{
+	if (rwlock == NULL)
+		return CPR_ERR_INVALID;
+
+#if defined(CPR_PLATFORM_WINDOWS)
+	InitializeSRWLock(&cpr__cast_rwlock(rwlock)->handle);
+#elif (defined(CPR_PLATFORM_UNIX) || defined(CPR_PLATFORM_APPLE)) && \
+	defined(CPR_HAS_PTHREAD_RWLOCK)
+	return pthread_rwlock_init(&cpr__cast_rwlock(rwlock)->handle, NULL) ==
+			       0 ?
+		       CPR_OK :
+		       CPR_ERR_SYNC;
+#else
+	{
+		CprInternalRwLock *rw = cpr__cast_rwlock(rwlock);
+		CprResult r = cpr_mutex_init(&rw->mutex);
+		if (cpr_err(r))
+			return r;
+		r = cpr_condvar_init(&rw->condvar);
+		if (cpr_err(r)) {
+			cpr_mutex_destroy(&rw->mutex);
+			return r;
+		}
+		rw->readers = 0;
+		rw->writer = false;
+	}
+#endif
+
+	return CPR_OK;
+}
+
+CPR_API void cpr_rwlock_destroy(CprRwLock *rwlock)
+{
+	if (rwlock == NULL)
+		return;
+
+#if defined(CPR_PLATFORM_WINDOWS)
+	(void)rwlock;
+#elif (defined(CPR_PLATFORM_UNIX) || defined(CPR_PLATFORM_APPLE)) && \
+	defined(CPR_HAS_PTHREAD_RWLOCK)
+	pthread_rwlock_destroy(&cpr__cast_rwlock(rwlock)->handle);
+#else
+	cpr_condvar_destroy(&cpr__cast_rwlock(rwlock)->condvar);
+	cpr_mutex_destroy(&cpr__cast_rwlock(rwlock)->mutex);
+#endif
+}
+
+CPR_API CprResult cpr_rwlock_lckread(CprRwLock *rwlock)
+{
+	if (rwlock == NULL)
+		return CPR_ERR_INVALID;
+
+#if defined(CPR_PLATFORM_WINDOWS)
+	AcquireSRWLockShared(&cpr__cast_rwlock(rwlock)->handle);
+#elif (defined(CPR_PLATFORM_UNIX) || defined(CPR_PLATFORM_APPLE)) && \
+	defined(CPR_HAS_PTHREAD_RWLOCK)
+	return pthread_rwlock_rdlock(&cpr__cast_rwlock(rwlock)->handle) == 0 ?
+		       CPR_OK :
+		       CPR_ERR_SYNC;
+#else
+	{
+		CprInternalRwLock *rw = cpr__cast_rwlock(rwlock);
+		CprResult r = cpr_mutex_lock(&rw->mutex);
+		if (cpr_err(r))
+			return r;
+		while (rw->writer) {
+			r = cpr_condvar_wait(&rw->condvar, &rw->mutex);
+			if (cpr_err(r)) {
+				cpr_mutex_unlock(&rw->mutex);
+				return r;
+			}
+		}
+		rw->readers++;
+		return cpr_mutex_unlock(&rw->mutex);
+	}
+#endif
+
+	return CPR_OK;
+}
+
+CPR_API CprResult cpr_rwlock_try_lckread(CprRwLock *rwlock)
+{
+	if (rwlock == NULL)
+		return CPR_ERR_INVALID;
+
+#if defined(CPR_PLATFORM_WINDOWS)
+	return TryAcquireSRWLockShared(&cpr__cast_rwlock(rwlock)->handle) ?
+		       CPR_OK :
+		       CPR_ERR_BUSY;
+#elif (defined(CPR_PLATFORM_UNIX) || defined(CPR_PLATFORM_APPLE)) && \
+	defined(CPR_HAS_PTHREAD_RWLOCK)
+	int r = pthread_rwlock_tryrdlock(&cpr__cast_rwlock(rwlock)->handle);
+	if (r == 0)
+		return CPR_OK;
+	if (r == EBUSY)
+		return CPR_ERR_BUSY;
+	return CPR_ERR_SYNC;
+#else
+	{
+		CprInternalRwLock *rw = cpr__cast_rwlock(rwlock);
+		CprResult r = cpr_mutex_lock(&rw->mutex);
+		if (cpr_err(r))
+			return r;
+		if (rw->writer) {
+			cpr_mutex_unlock(&rw->mutex);
+			return CPR_ERR_BUSY;
+		}
+		rw->readers++;
+		return cpr_mutex_unlock(&rw->mutex);
+	}
+#endif
+}
+
+CPR_API CprResult cpr_rwlock_ulckread(CprRwLock *rwlock)
+{
+	if (rwlock == NULL)
+		return CPR_ERR_INVALID;
+
+#if defined(CPR_PLATFORM_WINDOWS)
+	ReleaseSRWLockShared(&cpr__cast_rwlock(rwlock)->handle);
+#elif (defined(CPR_PLATFORM_UNIX) || defined(CPR_PLATFORM_APPLE)) && \
+	defined(CPR_HAS_PTHREAD_RWLOCK)
+	return pthread_rwlock_unlock(&cpr__cast_rwlock(rwlock)->handle) == 0 ?
+		       CPR_OK :
+		       CPR_ERR_SYNC;
+#else
+	{
+		CprInternalRwLock *rw = cpr__cast_rwlock(rwlock);
+		CprResult r = cpr_mutex_lock(&rw->mutex);
+		if (cpr_err(r))
+			return r;
+		rw->readers--;
+		if (rw->readers == 0) {
+			r = cpr_condvar_broadcast(&rw->condvar);
+			if (cpr_err(r)) {
+				cpr_mutex_unlock(&rw->mutex);
+				return r;
+			}
+		}
+		return cpr_mutex_unlock(&rw->mutex);
+	}
+#endif
+
+	return CPR_OK;
+}
+
+CPR_API CprResult cpr_rwlock_lckwrite(CprRwLock *rwlock)
+{
+	if (rwlock == NULL)
+		return CPR_ERR_INVALID;
+
+#if defined(CPR_PLATFORM_WINDOWS)
+	AcquireSRWLockExclusive(&cpr__cast_rwlock(rwlock)->handle);
+#elif (defined(CPR_PLATFORM_UNIX) || defined(CPR_PLATFORM_APPLE)) && \
+	defined(CPR_HAS_PTHREAD_RWLOCK)
+	return pthread_rwlock_wrlock(&cpr__cast_rwlock(rwlock)->handle) == 0 ?
+		       CPR_OK :
+		       CPR_ERR_SYNC;
+#else
+	{
+		CprInternalRwLock *rw = cpr__cast_rwlock(rwlock);
+		CprResult r = cpr_mutex_lock(&rw->mutex);
+		if (cpr_err(r))
+			return r;
+		while (rw->readers > 0 || rw->writer) {
+			r = cpr_condvar_wait(&rw->condvar, &rw->mutex);
+			if (cpr_err(r)) {
+				cpr_mutex_unlock(&rw->mutex);
+				return r;
+			}
+		}
+		rw->writer = true;
+		return cpr_mutex_unlock(&rw->mutex);
+	}
+#endif
+
+	return CPR_OK;
+}
+
+CPR_API CprResult cpr_rwlock_try_lckwrite(CprRwLock *rwlock)
+{
+	if (rwlock == NULL)
+		return CPR_ERR_INVALID;
+
+#if defined(CPR_PLATFORM_WINDOWS)
+	return TryAcquireSRWLockExclusive(&cpr__cast_rwlock(rwlock)->handle) ?
+		       CPR_OK :
+		       CPR_ERR_BUSY;
+#elif (defined(CPR_PLATFORM_UNIX) || defined(CPR_PLATFORM_APPLE)) && \
+	defined(CPR_HAS_PTHREAD_RWLOCK)
+	int r = pthread_rwlock_trywrlock(&cpr__cast_rwlock(rwlock)->handle);
+	if (r == 0)
+		return CPR_OK;
+	if (r == EBUSY)
+		return CPR_ERR_BUSY;
+	return CPR_ERR_SYNC;
+#else
+	{
+		CprInternalRwLock *rw = cpr__cast_rwlock(rwlock);
+		CprResult r = cpr_mutex_lock(&rw->mutex);
+		if (cpr_err(r))
+			return r;
+		if (rw->readers > 0 || rw->writer) {
+			cpr_mutex_unlock(&rw->mutex);
+			return CPR_ERR_BUSY;
+		}
+		rw->writer = true;
+		return cpr_mutex_unlock(&rw->mutex);
+	}
+#endif
+}
+
+CPR_API CprResult cpr_rwlock_ulckwrite(CprRwLock *rwlock)
+{
+	if (rwlock == NULL)
+		return CPR_ERR_INVALID;
+
+#if defined(CPR_PLATFORM_WINDOWS)
+	ReleaseSRWLockExclusive(&cpr__cast_rwlock(rwlock)->handle);
+#elif (defined(CPR_PLATFORM_UNIX) || defined(CPR_PLATFORM_APPLE)) && \
+	defined(CPR_HAS_PTHREAD_RWLOCK)
+	return pthread_rwlock_unlock(&cpr__cast_rwlock(rwlock)->handle) == 0 ?
+		       CPR_OK :
+		       CPR_ERR_SYNC;
+#else
+	{
+		CprInternalRwLock *rw = cpr__cast_rwlock(rwlock);
+		CprResult r = cpr_mutex_lock(&rw->mutex);
+		if (cpr_err(r))
+			return r;
+		rw->writer = false;
+		r = cpr_condvar_broadcast(&rw->condvar);
+		if (cpr_err(r)) {
+			cpr_mutex_unlock(&rw->mutex);
+			return r;
+		}
+		return cpr_mutex_unlock(&rw->mutex);
+	}
 #endif
 
 	return CPR_OK;

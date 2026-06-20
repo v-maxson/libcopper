@@ -69,4 +69,39 @@ CPR_API CprResult cpr_condvar_broadcast(CprCondVar *condvar);
 }
 #endif
 
+// --- Read-Write Lock ---
+
+#define CPR_RWLOCK_STORAGE_SIZE \
+	200 // largest possible size across all platforms (200 bytes on macOS/iOS)
+
+/// A read-write lock, must be initialized with `cpr_rwlock_init` before use!
+/// Mutiple readers may hold the lock concurrently; writers are exclusive.
+/// No writer preference is guaranteed; sunstained reader load can starve writers.
+typedef struct {
+	union {
+		uint8_t storage[CPR_RWLOCK_STORAGE_SIZE];
+		CprMaxAlign _align;
+	} _internal;
+} CprRwLock;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+CPR_API CprResult cpr_rwlock_init(CprRwLock *rwlock);
+CPR_API void cpr_rwlock_destroy(CprRwLock *rwlock);
+
+CPR_API CprResult cpr_rwlock_lckread(CprRwLock *rwlock);
+/// Returns CPR_ERR_BUSY if the read lock cannot be acquired immediately.
+CPR_API CprResult cpr_rwlock_try_lckread(CprRwLock *rwlock);
+CPR_API CprResult cpr_rwlock_ulckread(CprRwLock *rwlock);
+CPR_API CprResult cpr_rwlock_lckwrite(CprRwLock *rwlock);
+/// Returns CPR_ERR_BUSY if the write lock cannot be acquired immediately.
+CPR_API CprResult cpr_rwlock_try_lckwrite(CprRwLock *rwlock);
+CPR_API CprResult cpr_rwlock_ulckwrite(CprRwLock *rwlock);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif // CPR_SYNC_H

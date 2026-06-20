@@ -159,7 +159,7 @@ CPR_API void cpr_condvar_destroy(CprCondVar *condvar)
 
 CPR_API CprResult cpr_condvar_wait(CprCondVar *condvar, CprMutex *mutex)
 {
-	if (condvar == NULL)
+	if (condvar == NULL || mutex == NULL)
 		return CPR_ERR_INVALID;
 
 #if defined(CPR_PLATFORM_WINDOWS)

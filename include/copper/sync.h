@@ -10,7 +10,7 @@
 // --- Mutex ---
 
 #define CPR_MUTEX_STORAGE_SIZE \
-	64 // defined as the largest possible size of a mutex across all platforms (64 bytes on macOS/iOS)
+	64 // largest possible size across all platforms (64 bytes on macOS/iOS)
 
 /// A mutex. Must be initialized with cpr_mutex_init before use!
 typedef struct {
@@ -38,7 +38,7 @@ CPR_API CprResult cpr_mutex_unlock(CprMutex *mutex);
 // --- Condition Variable ---
 
 #define CPR_CONDVAR_STORAGE_SIZE \
-	48 // defined as the largest possible size of a condition variable across all platforms (48 bytes on macOS/iOS)
+	48 // largest possible size across all platforms (48 bytes on macOS/iOS)
 
 typedef struct {
 	union {

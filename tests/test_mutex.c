@@ -94,6 +94,7 @@ typedef struct {
 typedef struct {
 	CprMutex *mutex;
 	volatile int *counter;
+	CprResult result;
 } CounterArgs;
 
 #if defined(CPR_PLATFORM_WINDOWS)
@@ -112,9 +113,11 @@ static DWORD WINAPI cpr__counter_worker(LPVOID arg)
 	CounterArgs *a = (CounterArgs *)arg;
 	int i;
 	for (i = 0; i < INCREMENTS; i++) {
-		cpr_mutex_lock(a->mutex);
+		CprResult r = cpr_mutex_lock(a->mutex);
+		if (cpr_err(r)) { a->result = r; return 0; }
 		(*a->counter)++;
-		cpr_mutex_unlock(a->mutex);
+		r = cpr_mutex_unlock(a->mutex);
+		if (cpr_err(r)) { a->result = r; return 0; }
 	}
 	return 0;
 }
@@ -151,6 +154,7 @@ void test_contention_correctness(void)
 	for (i = 0; i < NTHREADS; i++) {
 		args[i].mutex = &m;
 		args[i].counter = &counter;
+		args[i].result = CPR_OK;
 		threads[i] = CreateThread(NULL, 0, cpr__counter_worker,
 					  &args[i], 0, NULL);
 	}
@@ -159,6 +163,8 @@ void test_contention_correctness(void)
 	for (i = 0; i < NTHREADS; i++)
 		CloseHandle(threads[i]);
 
+	for (i = 0; i < NTHREADS; i++)
+		TEST_ASSERT_EQUAL_INT(CPR_OK, args[i].result);
 	TEST_ASSERT_EQUAL_INT(NTHREADS * INCREMENTS, (int)counter);
 	cpr_mutex_destroy(&m);
 }
@@ -179,9 +185,11 @@ static void *cpr__counter_worker(void *arg)
 	CounterArgs *a = (CounterArgs *)arg;
 	int i;
 	for (i = 0; i < INCREMENTS; i++) {
-		cpr_mutex_lock(a->mutex);
+		CprResult r = cpr_mutex_lock(a->mutex);
+		if (cpr_err(r)) { a->result = r; return NULL; }
 		(*a->counter)++;
-		cpr_mutex_unlock(a->mutex);
+		r = cpr_mutex_unlock(a->mutex);
+		if (cpr_err(r)) { a->result = r; return NULL; }
 	}
 	return NULL;
 }
@@ -217,6 +225,7 @@ void test_contention_correctness(void)
 	for (i = 0; i < NTHREADS; i++) {
 		args[i].mutex = &m;
 		args[i].counter = &counter;
+		args[i].result = CPR_OK;
 		pthread_create(&threads[i], NULL, cpr__counter_worker,
 			       &args[i]);
 	}
@@ -224,6 +233,8 @@ void test_contention_correctness(void)
 	for (i = 0; i < NTHREADS; i++)
 		pthread_join(threads[i], NULL);
 
+	for (i = 0; i < NTHREADS; i++)
+		TEST_ASSERT_EQUAL_INT(CPR_OK, args[i].result);
 	TEST_ASSERT_EQUAL_INT(NTHREADS * INCREMENTS, (int)counter);
 	cpr_mutex_destroy(&m);
 }

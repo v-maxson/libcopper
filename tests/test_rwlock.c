@@ -107,6 +107,14 @@ void test_try_lckwrite_succeeds(void)
 // --- Multi-threaded ---
 
 #define NREADERS 4
+#define NWRITERS 4
+#define WRITER_INCREMENTS 1000
+
+typedef struct {
+	CprRwLock    *rwlock;
+	volatile int *counter;
+	CprResult     result;
+} WriterArgs;
 
 typedef struct {
 	CprRwLock  *rwlock;
@@ -127,6 +135,20 @@ typedef struct {
 } ReaderArgs;
 
 #if defined(CPR_PLATFORM_WINDOWS)
+
+static DWORD WINAPI cpr__writer_counter_worker(LPVOID arg)
+{
+	WriterArgs *a = (WriterArgs *)arg;
+	int i;
+	for (i = 0; i < WRITER_INCREMENTS; i++) {
+		CprResult r = cpr_rwlock_lckwrite(a->rwlock);
+		if (cpr_err(r)) { a->result = r; return 0; }
+		(*a->counter)++;
+		r = cpr_rwlock_ulckwrite(a->rwlock);
+		if (cpr_err(r)) { a->result = r; return 0; }
+	}
+	return 0;
+}
 
 static DWORD WINAPI cpr__write_worker(LPVOID arg)
 {
@@ -321,7 +343,48 @@ void test_write_then_read(void)
 	cpr_rwlock_destroy(&rw);
 }
 
+void test_write_contention_correctness(void)
+{
+	CprRwLock rw;
+	volatile int counter = 0;
+	HANDLE threads[NWRITERS];
+	WriterArgs args[NWRITERS];
+	int i;
+
+	cpr_rwlock_init(&rw);
+	for (i = 0; i < NWRITERS; i++) {
+		args[i].rwlock	= &rw;
+		args[i].counter = &counter;
+		args[i].result	= CPR_OK;
+		threads[i] = CreateThread(NULL, 0, cpr__writer_counter_worker,
+					  &args[i], 0, NULL);
+	}
+
+	WaitForMultipleObjects(NWRITERS, threads, TRUE, INFINITE);
+	for (i = 0; i < NWRITERS; i++)
+		CloseHandle(threads[i]);
+
+	for (i = 0; i < NWRITERS; i++)
+		TEST_ASSERT_EQUAL_INT(CPR_OK, args[i].result);
+	TEST_ASSERT_EQUAL_INT(NWRITERS * WRITER_INCREMENTS, (int)counter);
+	cpr_rwlock_destroy(&rw);
+}
+
 #elif defined(CPR_PLATFORM_UNIX) || defined(CPR_PLATFORM_APPLE)
+
+static void *cpr__writer_counter_worker(void *arg)
+{
+	WriterArgs *a = (WriterArgs *)arg;
+	int i;
+	for (i = 0; i < WRITER_INCREMENTS; i++) {
+		CprResult r = cpr_rwlock_lckwrite(a->rwlock);
+		if (cpr_err(r)) { a->result = r; return NULL; }
+		(*a->counter)++;
+		r = cpr_rwlock_ulckwrite(a->rwlock);
+		if (cpr_err(r)) { a->result = r; return NULL; }
+	}
+	return NULL;
+}
 
 static void *cpr__write_worker(void *arg)
 {
@@ -511,6 +574,32 @@ void test_write_then_read(void)
 	cpr_rwlock_destroy(&rw);
 }
 
+void test_write_contention_correctness(void)
+{
+	CprRwLock rw;
+	volatile int counter = 0;
+	pthread_t threads[NWRITERS];
+	WriterArgs args[NWRITERS];
+	int i;
+
+	cpr_rwlock_init(&rw);
+	for (i = 0; i < NWRITERS; i++) {
+		args[i].rwlock	= &rw;
+		args[i].counter = &counter;
+		args[i].result	= CPR_OK;
+		pthread_create(&threads[i], NULL, cpr__writer_counter_worker,
+			       &args[i]);
+	}
+
+	for (i = 0; i < NWRITERS; i++)
+		pthread_join(threads[i], NULL);
+
+	for (i = 0; i < NWRITERS; i++)
+		TEST_ASSERT_EQUAL_INT(CPR_OK, args[i].result);
+	TEST_ASSERT_EQUAL_INT(NWRITERS * WRITER_INCREMENTS, (int)counter);
+	cpr_rwlock_destroy(&rw);
+}
+
 #endif /* threading */
 
 int main(void)
@@ -539,6 +628,7 @@ int main(void)
 	RUN_TEST(test_writer_exclusive);
 	RUN_TEST(test_try_lckwrite_busy);
 	RUN_TEST(test_write_then_read);
+	RUN_TEST(test_write_contention_correctness);
 #endif
 
 	return UNITY_END();

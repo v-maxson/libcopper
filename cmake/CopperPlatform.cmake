@@ -35,4 +35,23 @@ elseif(CMAKE_C_COMPILER_ID STREQUAL "GNU")
         list(APPEND COPPER_PLATFORM_DEFS CPR_COMPILER_GCC=1)
 endif()
 
+if(UNIX OR APPLE)
+        include(CheckCSourceCompiles)
+        find_package(Threads)
+        set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
+        check_c_source_compiles("
+#include <pthread.h>
+int main(void) {
+    pthread_rwlock_t rw;
+    pthread_rwlock_init(&rw, 0);
+    pthread_rwlock_destroy(&rw);
+    return 0;
+}
+" CPR_HAS_PTHREAD_RWLOCK)
+        unset(CMAKE_REQUIRED_LIBRARIES)
+        if(CPR_HAS_PTHREAD_RWLOCK)
+                list(APPEND COPPER_PLATFORM_DEFS CPR_HAS_PTHREAD_RWLOCK=1)
+        endif()
+endif()
+
 message(STATUS "copper: platform defs = ${COPPER_PLATFORM_DEFS}")

@@ -1,177 +1,80 @@
 # libcopper Coding Guidelines
 
-## Naming conventions
+## Naming
 
-All public symbols are prefixed with `cpr` (lower-case) or `CPR_` (upper-case).
+All public symbols are prefixed with `cpr` or `CPR_`.
 
 | Construct | Convention | Example |
 |---|---|---|
-| `typedef struct` / `typedef enum` | `Cpr` + PascalCase | `CprString`, `CprArena` |
-| Functions | `cpr_` + snake_case | `cpr_str_len()` |
-| Function parameters | snake_case (no prefix) | `buf_size`, `out_len` |
-| Struct / union members | snake_case (no prefix) | `byte_count`, `next` |
-| Constant macros (`#define`, `enum` values) | `CPR_` + SCREAMING_SNAKE_CASE | `CPR_MAX_PATH`, `CPR_ERROR_NONE` |
-| Function-like macros | `cpr_` + snake_case | `cpr_min(a, b)`, `cpr_array_len(a)` |
-| Header guards | `CPR_` + SCREAMING_SNAKE_CASE + `_H` | `CPR_PLATFORM_H` |
-| Internal (non-public) helpers | `cpr__` + snake_case (double underscore) | `cpr__hash_mix()` |
+| `typedef struct` / `typedef enum` | `Cpr` + PascalCase | `CprExampleType` |
+| Functions | `cpr_` + snake_case | `cpr_example_fn()` |
+| Parameters / struct members | snake_case | `example_param`, `next` |
+| Constant macros | `CPR_` + SCREAMING_SNAKE_CASE | `CPR_EXAMPLE_CONSTANT` |
+| Function-like macros | `cpr_` + snake_case | `cpr_example_macro(a, b)` |
+| Header guards | `CPR_` + SCREAMING_SNAKE_CASE + `_H` | `CPR_EXAMPLE_H` |
+| Internal helpers | `cpr__` + snake_case (double underscore) | `cpr__example_helper()` |
 
 ## Formatting
 
-All C source files must be formatted with `clang-format` using the `.clang-format`
-at the repository root before committing:
+Format with `clang-format -i` before committing. Key style points (Linux kernel variant):
 
-```sh
-clang-format -i path/to/file.c
-```
-
-Key points from the active style (Linux kernel variant):
-
-- Indentation: **tabs**, displayed as 8 columns.
-- Column limit: **80**.
-- Opening brace for **functions** goes on its own line (Allman).
-- Opening brace for **control statements** and **structs** stays on the same line (K&R).
-- Pointer `*` binds to the **right** (`int *p`, not `int* p`).
-
-Example:
-
-```c
-typedef struct {
-        int x;
-        int y;
-} CprPoint;
-
-int cpr_point_add(CprPoint a, CprPoint b, CprPoint *out)
-{
-        if (out == NULL) {
-                return -1;
-        }
-        out->x = a.x + b.x;
-        out->y = a.y + b.y;
-        return 0;
-}
-```
+- Tabs, 8-column indent; 80-column limit.
+- Allman braces for functions, K&R for control statements and structs.
+- `int *p`, not `int* p`.
 
 ## Language standard
 
-Write strictly conforming **C99**. No compiler extensions unless they are
-guarded by a platform or compiler macro from `copper/platform.h`.
+C99 only. Guard all compiler extensions with a macro from `platform.h`:
 
 ```c
-/* OK */
 #if defined(CPR_COMPILER_GCC) || defined(CPR_COMPILER_CLANG)
-__attribute__((noinline)) static void cpr__slow_path(void) { ... }
+__attribute__((noinline)) static void cpr__example_fn(void) { ... }
 #endif
-
-/* Not OK — unguarded extension */
-__attribute__((noinline)) static void cpr__slow_path(void) { ... }
 ```
 
 ## Cross-platform compatibility
 
-- Every public API must compile on **Windows (MSVC & MinGW), macOS, Linux,
-  FreeBSD, Android, and iOS** unless a feature is genuinely unavailable there.
-- Use `CPR_API` on every public function/variable declaration so that shared
-  library builds export symbols correctly on all platforms.
-- Avoid POSIX-only headers (`<unistd.h>`, `<sys/types.h>`, …) in public headers;
-  confine them to platform-guarded `.c` files.
-- Do not assume a fixed pointer or `long` width; use `<stdint.h>` types
-  (`uint32_t`, `uintptr_t`, …) for sized arithmetic.
+Every public API must compile on Windows (MSVC & MinGW), macOS, Linux, FreeBSD, Android, and iOS.
 
-### Opaque storage sizing
+- Use `CPR_API` on all public declarations.
+- Keep platform headers (`<windows.h>`, `<pthread.h>`, etc.) out of public headers; confine them to platform-guarded `.c` files.
+- Use `<stdint.h>` types for fixed-width arithmetic; don't assume pointer or `long` width.
 
-Types that wrap a platform-specific handle (mutexes, condition variables, etc.) use a
-fixed-size byte array in their public struct so callers can embed them by value without
-including any platform headers. The storage size must be large enough to hold the
-internal implementation on **every supported platform** — use the worst-case platform as
-the floor, not the average.
-
-Always add a compile-time size check immediately after the internal typedef in the `.c`
-file so that adding a new platform or growing an internal type causes a build failure
-rather than silent memory corruption:
+**Opaque storage:** Types that wrap an OS handle use a fixed-size byte array in their public struct, sized to the worst-case platform. Always add a compile-time size check in the `.c` file:
 
 ```c
-typedef uint8_t cpr__mutex_size_check
-    [sizeof(CprInternalMutex) <= CPR_MUTEX_STORAGE_SIZE ? 1 : -1];
+typedef uint8_t cpr__foo_size_check
+    [sizeof(CprInternalFoo) <= CPR_FOO_STORAGE_SIZE ? 1 : -1];
 ```
 
-### Platform fallbacks
-
-When a feature has no native implementation on a platform, prefer providing a fallback
-built from other Copper primitives over excluding the feature entirely. A fallback that
-is correct but slower is better than no API at all. The read-write lock, for example,
-falls back to a `CprMutex` + `CprCondVar` on platforms without `pthread_rwlock_t`.
-
-When no reasonable fallback exists, **exclude the declaration** with a preprocessor
-guard. A clean compile error is always preferable to a stub that silently fails or
-returns wrong results.
+**Fallbacks:** When a feature has no native implementation on a platform, provide a fallback built from existing Copper primitives if one is reasonable. If no fallback exists, exclude the declaration with a preprocessor guard — a compile error is better than silent failure:
 
 ```c
-/* Good — excluded cleanly when unavailable */
 #if defined(CPR_PLATFORM_UNIX)
-CPR_API int cpr_fd_set_nonblock(int fd);
+CPR_API int cpr_example_fn(int fd);
 #endif
-
-/* Bad — silently wrong */
-CPR_API int cpr_fd_set_nonblock(int fd) { return CPR_ERR_NOT_FOUND; }
 ```
 
 ## Header documentation
 
-Every symbol declared in a public header (`include/copper/*.h`) must carry a
-short doc-comment immediately above it if it is not immediately obvious what it does. 
-One or two lines is the norm; only go longer when the contract is genuinely non-obvious.
+Every non-obvious public symbol needs a short doc-comment — one or two lines. Document ownership explicitly whenever it isn't obvious from the types alone.
 
 ```c
-// no comment here because it is obvious what this does
-CPR_API size_t cpr_str_len(CprString s);
-
-/// Allocates `size` bytes from `arena`.
-/// Returns NULL when the arena has no remaining capacity.
-CPR_API void *cpr_arena_alloc(CprArena *arena, size_t size);
-```
-
-When a symbol involves ownership transfer, the doc-comment **must** state it
-explicitly — who is responsible for freeing the object, and under what
-conditions:
-
-```c
-/// Creates a new string by copying `data` (length `len`) into `arena`.
-/// Ownership of the returned CprString belongs to `arena`; do not free it
-/// directly.
-CPR_API CprString cpr_str_from_buf(CprArena *arena, const char *data,
-                                   size_t len);
-
-/// Duplicates `s` with malloc.
-/// Caller owns the returned pointer and must free it with cpr_str_free().
-CPR_API CprString cpr_str_dup(CprString s);
-```
-
-Struct and enum members that have non-obvious ownership or lifetime constraints
-should carry an inline comment on the member itself:
-
-```c
-typedef struct {
-        char *data;   ///< owned; free with cpr_str_free()
-        size_t len;
-} CprString;
+/// Allocates `size` bytes from `ctx`. Returns NULL if full.
+CPR_API void *cpr_example_alloc(CprExampleCtx *ctx, size_t size);
 ```
 
 ## Comments
 
-Write comments only when the **why** is non-obvious: a hidden constraint, a
-subtle invariant, a workaround for a specific external bug. Do not describe
-*what* the code does — well-named identifiers already do that.
+Comment the *why*, not the *what*. If removing the comment wouldn't confuse a future reader, don't write it.
 
 ## Error handling
 
-Return values carry errors; do not use global state (no `errno`-style globals
-in new APIs). Define a `CprResult` enum or integer return code per module and
-document the contract in the header.
+Return errors as `CprResult`; no global error state. Document the possible return codes in the header.
 
-## Adding a new source file
+## Adding a new module
 
 1. Create `src/<module>.c` and `include/copper/<module>.h`.
-2. Add `src/<module>.c` to the `COPPER_SOURCES` list in the root `CMakeLists.txt`.
-3. Add at least one test file `tests/test_<module>.c` and register it with
-   `cpr_add_test(test_<module>)` in `tests/CMakeLists.txt`.
-4. Run `clang-format -i` on both files before opening a pull request.
+2. Add `src/<module>.c` to `COPPER_SOURCES` in `CMakeLists.txt`.
+3. Add `tests/test_<module>.c` and register it with `cpr_add_test(test_<module>)` in `tests/CMakeLists.txt`.
+4. Run `clang-format -i` on all new files before opening a pull request.

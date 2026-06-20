@@ -134,15 +134,21 @@ void test_alloc_exhaustion(void)
 
 void test_alloc_aligned_power_of_two(void)
 {
-	CprArena arena;
-	static char buf[128];
-	cpr_arena_init_buf(&arena, buf, sizeof(buf));
+	static const size_t kAligns[] = { 1, 4, 8, 16 };
+	static char buf[256];
+	size_t i;
 
-	CprResult res;
-	void *ptr = cpr_arena_alloc_aligned(&arena, 8, 16, &res);
-	TEST_ASSERT_EQUAL_INT(CPR_OK, res);
-	TEST_ASSERT_NOT_NULL(ptr);
-	TEST_ASSERT_EQUAL_size_t(0, (size_t)ptr % 16);
+	for (i = 0; i < sizeof(kAligns) / sizeof(kAligns[0]); i++) {
+		CprArena arena;
+		CprResult res;
+		void *ptr;
+
+		cpr_arena_init_buf(&arena, buf, sizeof(buf));
+		ptr = cpr_arena_alloc_aligned(&arena, 8, kAligns[i], &res);
+		TEST_ASSERT_EQUAL_INT(CPR_OK, res);
+		TEST_ASSERT_NOT_NULL(ptr);
+		TEST_ASSERT_EQUAL_size_t(0, (size_t)ptr % kAligns[i]);
+	}
 }
 
 void test_alloc_aligned_non_pow2_rejected(void)

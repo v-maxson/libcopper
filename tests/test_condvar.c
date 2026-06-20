@@ -30,6 +30,14 @@ void test_wait_null_condvar(void)
 	cpr_mutex_destroy(&m);
 }
 
+void test_wait_null_mutex(void)
+{
+	CprCondVar cv;
+	cpr_condvar_init(&cv);
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_condvar_wait(&cv, NULL));
+	cpr_condvar_destroy(&cv);
+}
+
 void test_signal_null(void)
 {
 	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_condvar_signal(NULL));
@@ -255,6 +263,7 @@ int main(void)
 
 	RUN_TEST(test_init_null);
 	RUN_TEST(test_wait_null_condvar);
+	RUN_TEST(test_wait_null_mutex);
 	RUN_TEST(test_signal_null);
 	RUN_TEST(test_broadcast_null);
 	RUN_TEST(test_destroy_null);

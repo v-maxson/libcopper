@@ -39,6 +39,16 @@ A lightweight, cross-platform utility library for C99.
 
 **Architectures:** x86, x86-64, ARM, ARM64, RISC-V 32, RISC-V 64
 
+## Is Copper right for my project?
+
+Copper is aimed at everyday desktop, server, and mobile apps on the supported platforms. If you need portable threading and utilities without pulling in a big framework, it's a reasonable fit.
+
+It's probably **not** what you want if:
+
+- You're targeting **embedded or bare-metal** hardware. Copper assumes a general-purpose OS and has no RTOS support.
+- You need **production-grade reliability**. See the disclaimer above.
+- You need **C89** compatibility. Copper is C99.
+
 ## Contributing
 
 If any part of a contribution was written with the assistance of an AI tool, please note that in the pull request description.

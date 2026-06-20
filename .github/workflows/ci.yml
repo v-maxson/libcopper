@@ -47,8 +47,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: build/_deps
-          key: ${{ runner.os }}-deps-${{ hashFiles('**/CMakeLists.txt') }}
-          restore-keys: ${{ runner.os }}-deps-
+          key: ${{ runner.os }}-${{ matrix.name }}-deps-${{ hashFiles('**/CMakeLists.txt') }}
+          restore-keys: ${{ runner.os }}-${{ matrix.name }}-deps-
 
       - name: Configure
         run: cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} ${{ matrix.configure_flags }}

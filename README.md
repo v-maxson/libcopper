@@ -55,6 +55,19 @@ It's probably **not** what you want if:
 - You need **production-grade reliability**. See the disclaimer above.
 - You need **C89** compatibility. Copper is C99.
 
+## Coming Soon
+
+- Threading abstractions
+- Logging system
+- Filesystem
+- Timing/Clock
+- Dynamic array type
+- Base64 encoding
+- CLI argument parsing
+- Hash map
+- UUID generation
+- Dynamic string type
+
 ## Contributing
 
 If any part of a contribution was written with the assistance of an AI tool, please note that in the pull request description.

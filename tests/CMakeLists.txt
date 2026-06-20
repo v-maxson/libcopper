@@ -8,6 +8,13 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(unity)
 
+# Unity is a third-party library; don't apply our strict warning flags to it.
+if(MSVC)
+        target_compile_options(unity PRIVATE /W0 /WX-)
+else()
+        target_compile_options(unity PRIVATE -w)
+endif()
+
 function(cpr_add_test name)
         add_executable(${name} ${name}.c)
         target_link_libraries(${name} PRIVATE copper unity ${ARGN})

@@ -16,9 +16,10 @@ A lightweight, cross-platform utility library for C99.
 
 - **Arena Allocator** — Allocate many objects at once and free them all together in a single call, which is much faster than freeing each one individually. Works with heap memory or a fixed-size buffer you provide.
 
-- **Synchronization Primitives** — Tools for coordinating access to shared data across threads. More primitives coming soon.
+- **Synchronization Primitives** — Tools for coordinating access to shared data across threads.
   - **Mutex** — A lock that ensures only one thread can access shared data at a time.
   - **Condition Variable** — Lets a thread sleep until another thread signals that something has changed.
+  - **Read-Write Lock** — Allows multiple threads to read shared data at the same time, while ensuring writers get exclusive access.
 
 - **Byte Size Utilities** — Macros for writing byte sizes in readable units (KB, MB, GB, KiB, MiB, GiB, and more) with conversions between them.
 

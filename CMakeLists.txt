@@ -23,6 +23,7 @@ find_package(Threads REQUIRED)
 
 set(COPPER_SOURCES
         src/arena.c
+        src/atomic.c
         src/copper.c
         src/sync.c
 )

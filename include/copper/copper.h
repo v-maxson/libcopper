@@ -3,6 +3,7 @@
 
 // Transient includes.
 #include <copper/arena.h>
+#include <copper/atomic.h>
 #include <copper/bytesize.h>
 #include <copper/log.h>
 #include <copper/platform.h>

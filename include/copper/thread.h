@@ -43,8 +43,8 @@ CPR_API CprResult cpr_thrd_detach(CprThread *thread);
 
 CPR_API CprThreadId cpr_thrd_get_id(const CprThread *thread);
 CPR_API CprThreadId cpr_thrd_current_id(void);
-CPR_API void cpr_thread_sleep(uint32_t ms);
-CPR_API void cpr_thread_yield(void);
+CPR_API void cpr_thrd_sleep(uint32_t ms);
+CPR_API void cpr_thrd_yield(void);
 
 // --- TLS ---
 

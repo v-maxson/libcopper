@@ -170,7 +170,7 @@ CprThreadId cpr_thrd_current_id(void)
 #endif
 }
 
-void cpr_thread_sleep(uint32_t ms)
+void cpr_thrd_sleep(uint32_t ms)
 {
 #if defined(CPR_PLATFORM_WINDOWS)
 	Sleep((DWORD)ms)
@@ -182,7 +182,7 @@ void cpr_thread_sleep(uint32_t ms)
 #endif
 }
 
-void cpr_thread_yield(void)
+void cpr_thrd_yield(void)
 {
 #if defined(CPR_PLATFORM_WINDOWS)
 	SwitchToThread();

@@ -2,13 +2,6 @@
 #include <copper/copper.h>
 #include <stdint.h>
 
-#if defined(CPR_PLATFORM_WINDOWS)
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#elif defined(CPR_PLATFORM_UNIX) || defined(CPR_PLATFORM_APPLE)
-#include <pthread.h>
-#endif
-
 void setUp(void)
 {
 }
@@ -493,71 +486,34 @@ typedef struct {
 	CprAtomicI32 *counter;
 } AtomicWorkerArgs;
 
-#if defined(CPR_PLATFORM_WINDOWS)
-
-static DWORD WINAPI cpr__atomic_worker(LPVOID arg)
+static void cpr__atomic_worker(void *arg)
 {
 	AtomicWorkerArgs *a = (AtomicWorkerArgs *)arg;
 	int i;
 	for (i = 0; i < INCREMENTS; i++)
 		cpr_atomici32_fetch_add(a->counter, 1);
-	return 0;
 }
 
 void test_i32_concurrent_increment(void)
 {
 	CprAtomicI32 counter;
 	AtomicWorkerArgs args[NTHREADS];
-	HANDLE threads[NTHREADS];
+	CprThread *threads[NTHREADS];
 	int i;
 
 	cpr_atomici32_init(&counter, 0);
 	for (i = 0; i < NTHREADS; i++) {
 		args[i].counter = &counter;
-		threads[i] = CreateThread(NULL, 0, cpr__atomic_worker,
-					  &args[i], 0, NULL);
+		threads[i] =
+			cpr_thrd_create(cpr__atomic_worker, &args[i], NULL);
 	}
-	WaitForMultipleObjects(NTHREADS, threads, TRUE, INFINITE);
 	for (i = 0; i < NTHREADS; i++)
-		CloseHandle(threads[i]);
+		cpr_thrd_join(threads[i]);
 
 	TEST_ASSERT_EQUAL_INT32(NTHREADS * INCREMENTS,
 				cpr_atomici32_load(&counter));
 	cpr_atomici32_destroy(&counter);
 }
-
-#elif defined(CPR_PLATFORM_UNIX) || defined(CPR_PLATFORM_APPLE)
-
-static void *cpr__atomic_worker(void *arg)
-{
-	AtomicWorkerArgs *a = (AtomicWorkerArgs *)arg;
-	int i;
-	for (i = 0; i < INCREMENTS; i++)
-		cpr_atomici32_fetch_add(a->counter, 1);
-	return NULL;
-}
-
-void test_i32_concurrent_increment(void)
-{
-	CprAtomicI32 counter;
-	AtomicWorkerArgs args[NTHREADS];
-	pthread_t threads[NTHREADS];
-	int i;
-
-	cpr_atomici32_init(&counter, 0);
-	for (i = 0; i < NTHREADS; i++) {
-		args[i].counter = &counter;
-		pthread_create(&threads[i], NULL, cpr__atomic_worker, &args[i]);
-	}
-	for (i = 0; i < NTHREADS; i++)
-		pthread_join(threads[i], NULL);
-
-	TEST_ASSERT_EQUAL_INT32(NTHREADS * INCREMENTS,
-				cpr_atomici32_load(&counter));
-	cpr_atomici32_destroy(&counter);
-}
-
-#endif
 
 int main(void)
 {
@@ -617,10 +573,7 @@ int main(void)
 	RUN_TEST(test_ptr_compare_exchange_success);
 	RUN_TEST(test_ptr_compare_exchange_failure);
 
-#if defined(CPR_PLATFORM_WINDOWS) || defined(CPR_PLATFORM_UNIX) || \
-	defined(CPR_PLATFORM_APPLE)
 	RUN_TEST(test_i32_concurrent_increment);
-#endif
 
 	return UNITY_END();
 }

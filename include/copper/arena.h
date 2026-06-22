@@ -15,7 +15,7 @@ typedef struct {
 	CprAllocFn alloc;
 	CprFreeFn free;
 	void *user_data;
-} CprAllocator;
+} CprArenaAllocator;
 
 // --- Arena ---
 
@@ -28,7 +28,7 @@ typedef struct {
 	size_t cap;
 	size_t offset;
 	size_t prev_offset; // single-step rewind marker
-	CprAllocator allocator;
+	CprArenaAllocator allocator;
 } CprArena;
 
 #ifdef __cplusplus
@@ -38,12 +38,12 @@ extern "C" {
 // --- Built-in Allocators ---
 
 /// The default allocator. Uses malloc/free.
-CPR_API CprAllocator cpr_arena_alloc_default(void);
+CPR_API CprArenaAllocator cpr_arena_alloc_default(void);
 
 // --- Initializers ---
 
 /// Initializes the `arena` with the given `allocator`. `capacity` is the number of bytes to request from the allocator.
-CPR_API CprResult cpr_arena_init(CprArena *arena, CprAllocator allocator,
+CPR_API CprResult cpr_arena_init(CprArena *arena, CprArenaAllocator allocator,
 				 size_t capacity);
 
 /// Initializes the `arena` with an externally-owned buffer.

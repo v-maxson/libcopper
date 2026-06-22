@@ -19,11 +19,11 @@ static void cpr__default_free(void *user_data, void *ptr)
 	free(ptr);
 }
 
-CPR_API CprAllocator cpr_arena_alloc_default(void)
+CPR_API CprArenaAllocator cpr_arena_alloc_default(void)
 {
-	return (CprAllocator){ .alloc = cpr__default_alloc,
-			       .free = cpr__default_free,
-			       .user_data = NULL };
+	return (CprArenaAllocator){ .alloc = cpr__default_alloc,
+				    .free = cpr__default_free,
+				    .user_data = NULL };
 }
 
 // --- Alignment Helpers ---
@@ -40,7 +40,7 @@ static int cpr__is_pow2(size_t v)
 
 // --- Initializers ---
 
-CPR_API CprResult cpr_arena_init(CprArena *arena, CprAllocator allocator,
+CPR_API CprResult cpr_arena_init(CprArena *arena, CprArenaAllocator allocator,
 				 size_t capacity)
 {
 	void *buf = NULL;

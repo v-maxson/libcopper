@@ -107,6 +107,23 @@ void test_distinct_ids(void)
 	TEST_ASSERT_NOT_EQUAL(id1, id2);
 }
 
+// --- Sleep and yield ---
+
+void test_sleep_zero(void)
+{
+	cpr_thrd_sleep(0); /* must not crash */
+}
+
+void test_sleep_nonzero(void)
+{
+	cpr_thrd_sleep(1); /* must not crash */
+}
+
+void test_yield(void)
+{
+	cpr_thrd_yield(); /* must not crash */
+}
+
 // --- Detach ---
 
 void test_detach(void)
@@ -231,6 +248,11 @@ int main(void)
 	RUN_TEST(test_thread_runs);
 	RUN_TEST(test_id_matches_current);
 	RUN_TEST(test_distinct_ids);
+
+	RUN_TEST(test_sleep_zero);
+	RUN_TEST(test_sleep_nonzero);
+	RUN_TEST(test_yield);
+
 	RUN_TEST(test_detach);
 
 	RUN_TEST(test_tls_destroy_null);

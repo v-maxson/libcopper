@@ -18,8 +18,8 @@ else()
         add_compile_options(-Wall -Wextra -Wpedantic -Werror)
 endif()
 
-include(cmake/CopperPlatform.cmake)
 find_package(Threads REQUIRED)
+include(cmake/CopperPlatform.cmake)
 
 set(COPPER_SOURCES
         src/arena.c
@@ -43,6 +43,10 @@ target_include_directories(copper
 )
 
 target_link_libraries(copper PRIVATE Threads::Threads)
+
+if(UNIX OR APPLE)
+        target_compile_definitions(copper PRIVATE _POSIX_C_SOURCE=200809L)
+endif()
 
 target_compile_definitions(copper PUBLIC ${COPPER_PLATFORM_DEFS})
 

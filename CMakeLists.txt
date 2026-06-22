@@ -26,6 +26,7 @@ set(COPPER_SOURCES
         src/atomic.c
         src/copper.c
         src/sync.c
+        src/thread.c
 )
 
 if(COPPER_SHARED)

@@ -51,7 +51,6 @@ It's probably **not** what you want if:
 
 ## Coming Soon
 
-- Threading abstractions
 - Logging system
 - Filesystem
 - Timing/Clock

@@ -1,6 +1,8 @@
 #ifndef CPR_RESULT_H
 #define CPR_RESULT_H
 
+#include "platform.h"
+
 #define CPR_RESULT_TABLE            \
 	CODE(CPR_OK, 0)             \
 	CODE(CPR_ERR_OOM, -1)       \
@@ -30,7 +32,7 @@ extern "C" {
 #endif
 
 /// Returns the name of `result` as a string (e.g. "CPR_OK").
-static inline const char *cpr_result_str(CprResult result)
+CPR_INLINE static const char *cpr_result_str(CprResult result)
 {
 	switch (result) {
 #define CODE(code, value) \

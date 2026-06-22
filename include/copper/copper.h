@@ -9,6 +9,7 @@
 #include <copper/platform.h>
 #include <copper/result.h>
 #include <copper/sync.h>
+#include <copper/time.h>
 
 #ifdef __cplusplus
 extern "C" {

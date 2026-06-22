@@ -39,12 +39,6 @@ A lightweight, cross-platform utility library for C99.
 
 **Architectures:** x86, x86-64, ARM, ARM64, RISC-V 32, RISC-V 64
 
-## Cross-platform design
-
-Copper hides platform-specific internals behind fixed-size opaque types. A `CprMutex`, for example, is just a byte array large enough to hold the largest mutex implementation across all supported platforms — `pthread_mutex_t` on macOS is the current worst case at 64 bytes, so that's what the storage is sized to. On every other platform those extra bytes are simply unused. This lets you embed types like `CprMutex` directly in your own structs without needing to know anything about the platform underneath.
-
-When a platform lacks native support for a feature, Copper provides a fallback built from lower-level primitives already in the library. The read-write lock, for instance, falls back to a mutex and condition variable on platforms where `pthread_rwlock_t` isn't available. If no reasonable fallback exists, the feature is excluded from the public API entirely with a preprocessor guard — you'll get a clean compile error rather than something that silently misbehaves.
-
 ## Is Copper right for my project?
 
 Copper is aimed at everyday desktop, server, and mobile apps on the supported platforms. If you need portable threading and utilities without pulling in a big framework, it's a reasonable fit.

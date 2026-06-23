@@ -173,7 +173,7 @@ CprThreadId cpr_thrd_current_id(void)
 void cpr_thrd_sleep(uint32_t ms)
 {
 #if defined(CPR_PLATFORM_WINDOWS)
-	Sleep((DWORD)ms)
+	Sleep((DWORD)ms);
 #else
 	struct timespec ts;
 	ts.tv_sec = cpr_ms_to_s(ms);

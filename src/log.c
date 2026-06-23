@@ -52,7 +52,7 @@ static bool cpr__is_tty(FILE *stream)
 {
 #if defined(CPR_PLATFORM_WINDOWS)
 	DWORD mode;
-	HANDLE h = _get_osfhandle(_fileno(stream));
+	HANDLE h = (HANDLE)_get_osfhandle(_fileno(stream));
 	return GetConsoleMode(h, &mode) != 0;
 #else
 	return isatty(fileno(stream));
@@ -75,7 +75,7 @@ static int cpr__format_finish(char *buf, size_t n, int written,
 		cpr__write_marker(buf, n, CPR_LOG_OUT_MARKER);
 		if (out_truncated)
 			*out_truncated = true;
-		return n > 0 ? n - 1 : 0;
+		return (int)(n > 0 ? n - 1 : 0);
 	}
 
 	if (out_truncated)
@@ -345,7 +345,7 @@ CprLogSink *cpr_log_file_sink(const CprFileSinkConfig *config,
 			*out_result = CPR_ERR_OOM;
 		return NULL;
 	}
-	strcpy(fs->path, config->path);
+	memcpy(fs->path, config->path, strlen(config->path) + 1);
 
 	fs->roll_mode = config->roll_mode;
 	fs->max_bytes = config->max_bytes;

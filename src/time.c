@@ -49,14 +49,14 @@ static const CprDateTime CPR__DT_ERR = { -1, 0, 0, 0, 0, 0, 0, 0 };
 
 static CprDateTime cpr__fill(const struct tm *tm, uint64_t ms)
 {
-	return (CprDateTime){ .year = tm->tm_year + 1900,
-			      .month = tm->tm_mon + 1,
-			      .day = tm->tm_mday,
-			      .hour = tm->tm_hour,
-			      .minute = tm->tm_min,
-			      .second = tm->tm_sec,
-			      .ms = ms % cpr_s_to_ms(1),
-			      .yday = tm->tm_yday };
+	return (CprDateTime){ .year = (int16_t)(tm->tm_year + 1900),
+			      .month = (uint8_t)(tm->tm_mon + 1),
+			      .day = (uint8_t)tm->tm_mday,
+			      .hour = (uint8_t)tm->tm_hour,
+			      .minute = (uint8_t)tm->tm_min,
+			      .second = (uint8_t)tm->tm_sec,
+			      .ms = (uint16_t)(ms % cpr_s_to_ms(1)),
+			      .yday = (uint16_t)tm->tm_yday };
 }
 
 CPR_API CprDateTime cpr_time_local(uint64_t ms)

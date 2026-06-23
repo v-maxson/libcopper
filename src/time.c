@@ -1,6 +1,5 @@
 #include "copper/time.h"
 
-#include <bits/time.h>
 #include <time.h>
 
 #if defined(CPR_PLATFORM_WINDOWS)

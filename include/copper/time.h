@@ -2,7 +2,6 @@
 #define CPR_TIME_H
 
 #include "platform.h"
-#include "result.h"
 #include <stdint.h>
 
 // --- Conversions to milliseconds ---

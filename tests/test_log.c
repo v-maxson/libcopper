@@ -631,7 +631,8 @@ void test_file_sink_writes_content(void)
 	FILE *fp = fopen(TEST_LOG_PATH, "r");
 	TEST_ASSERT_NOT_NULL(fp);
 	char buf[512] = { 0 };
-	(void)fread(buf, 1, sizeof buf - 1, fp);
+	size_t nread = fread(buf, 1, sizeof buf - 1, fp);
+	(void)nread;
 	fclose(fp);
 	remove(TEST_LOG_PATH);
 
@@ -665,7 +666,8 @@ void test_file_sink_overwrite_clears_file(void)
 	FILE *fp = fopen(TEST_LOG_PATH, "r");
 	TEST_ASSERT_NOT_NULL(fp);
 	char buf[512] = { 0 };
-	(void)fread(buf, 1, sizeof buf - 1, fp);
+	size_t nread = fread(buf, 1, sizeof buf - 1, fp);
+	(void)nread;
 	fclose(fp);
 	remove(TEST_LOG_PATH);
 
@@ -699,7 +701,8 @@ void test_file_sink_append_preserves_content(void)
 	FILE *fp = fopen(TEST_LOG_PATH, "r");
 	TEST_ASSERT_NOT_NULL(fp);
 	char buf[512] = { 0 };
-	(void)fread(buf, 1, sizeof buf - 1, fp);
+	size_t nread = fread(buf, 1, sizeof buf - 1, fp);
+	(void)nread;
 	fclose(fp);
 	remove(TEST_LOG_PATH);
 

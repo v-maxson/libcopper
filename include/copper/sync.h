@@ -12,7 +12,7 @@
 #define CPR_MUTEX_STORAGE_SIZE \
 	64 // largest possible size across all platforms (64 bytes on macOS/iOS)
 
-/// A mutex. Must be initialized with cpr_mutex_init before use!
+/// Must be initialized with `cpr_mutex_init` before use!
 typedef struct {
 	union {
 		uint8_t storage[CPR_MUTEX_STORAGE_SIZE];

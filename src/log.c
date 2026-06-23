@@ -37,6 +37,17 @@ static void cpr__write_marker(char *buf, size_t n, const char *marker)
 	buf[n - 1] = '\0';
 }
 
+static FILE *cpr__fopen(const char *path, const char *mode)
+{
+#if defined(CPR_COMPILER_MSVC)
+	FILE *fp = NULL;
+	fopen_s(&fp, path, mode);
+	return fp;
+#else
+	return fopen(path, mode);
+#endif
+}
+
 static bool cpr__is_tty(FILE *stream)
 {
 #if defined(CPR_PLATFORM_WINDOWS)
@@ -255,7 +266,7 @@ static void cpr__file_rotate(CprFileSink *fs)
 	snprintf(new_path, sizeof(new_path), "%s.1", fs->path);
 	rename(fs->path, new_path);
 
-	fs->fp = fopen(fs->path, "w");
+	fs->fp = cpr__fopen(fs->path, "w");
 	fs->current_size = 0;
 }
 
@@ -341,7 +352,7 @@ CprLogSink *cpr_log_file_sink(const CprFileSinkConfig *config,
 	fs->max_files = config->max_files;
 
 	mode = (config->open_mode == CPR_LOG_FILE_OVERWRITE) ? "w" : "a";
-	fs->fp = fopen(config->path, mode);
+	fs->fp = cpr__fopen(config->path, mode);
 	if (!fs->fp) {
 		free(fs->path);
 		free(fs);

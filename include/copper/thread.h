@@ -5,16 +5,23 @@
 #include "result.h"
 #include <stdint.h>
 
-typedef uint64_t CprThreadId;
-
 // --- Thread ---
 
+typedef uint64_t CprThreadId;
 typedef void (*CprThreadFn)(void *arg);
 
 /// Opaque thread handle acquired when a thread is created with `cpr_thread_create`.
 typedef struct CprThread CprThread;
 
 // --- TLS ---
+
+#if defined(CPR_COMPILER_MSVC)
+#define CPR_THREAD_LOCAL __declspec(thread)
+#elif defined(CPR_COMPILER_GCC) || defined(CPR_COMPILER_CLANG)
+#define CPR_THREAD_LOCAL __thread
+#else
+#error "CPR_THREAD_LOCAL: unsupported compiler"
+#endif
 
 typedef void (*CprTlsDestructor)(void *value);
 

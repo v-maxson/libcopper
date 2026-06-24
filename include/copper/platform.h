@@ -53,13 +53,13 @@
 #endif
 
 // --- Compiler ---
-#if defined(_MSC_VER)
-#ifndef CPR_COMPILER_MSVC
-#define CPR_COMPILER_MSVC 1
-#endif
-#elif defined(__clang__)
+#if defined(__clang__)
 #ifndef CPR_COMPILER_CLANG
 #define CPR_COMPILER_CLANG 1
+#endif
+#elif defined(_MSC_VER)
+#ifndef CPR_COMPILER_MSVC
+#define CPR_COMPILER_MSVC 1
 #endif
 #elif defined(__GNUC__)
 #ifndef CPR_COMPILER_GCC

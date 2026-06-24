@@ -164,7 +164,7 @@ CprThreadId cpr_thrd_get_id(const CprThread *thread)
 CprThreadId cpr_thrd_current_id(void)
 {
 #if defined(CPR_PLATFORM_WINDOWS)
-	return (CprThreadId)GetCurrentThread();
+	return (CprThreadId)GetCurrentThreadId();
 #else
 	return (CprThreadId)pthread_self();
 #endif

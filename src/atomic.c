@@ -440,7 +440,7 @@ CprResult cpr_atomici64_init(CprAtomicI64 *a, int64_t value)
 #if defined(CPR_HAS_GCC_ATOMICS)
 	__atomic_store_n(&i->value, value, __ATOMIC_SEQ_CST);
 #elif defined(CPR_HAS_MSVC_ATOMICS)
-	_InterlockedExchange64((volatile __int64 *)&i->value, (__int64)value);
+	_InterlockedExchange64((volatile int64_t *)&i->value, (int64_t)value);
 #else
 	CprResult r = cpr_mutex_init(&i->mutex);
 	if (cpr_err(r))
@@ -465,7 +465,7 @@ int64_t cpr_atomici64_load(CprAtomicI64 *a)
 #if defined(CPR_HAS_GCC_ATOMICS)
 	return __atomic_load_n(&i->value, __ATOMIC_SEQ_CST);
 #elif defined(CPR_HAS_MSVC_ATOMICS)
-	return (int64_t)_InterlockedOr64((volatile __int64 *)&i->value, 0LL);
+	return (int64_t)_InterlockedOr64((volatile int64_t *)&i->value, 0LL);
 #else
 	cpr_mutex_lock(&i->mutex);
 	int64_t v = i->value;
@@ -480,7 +480,7 @@ void cpr_atomici64_store(CprAtomicI64 *a, int64_t value)
 #if defined(CPR_HAS_GCC_ATOMICS)
 	__atomic_store_n(&i->value, value, __ATOMIC_SEQ_CST);
 #elif defined(CPR_HAS_MSVC_ATOMICS)
-	_InterlockedExchange64((volatile __int64 *)&i->value, (__int64)value);
+	_InterlockedExchange64((volatile int64_t *)&i->value, (int64_t)value);
 #else
 	cpr_mutex_lock(&i->mutex);
 	i->value = value;
@@ -494,8 +494,8 @@ int64_t cpr_atomici64_exchange(CprAtomicI64 *a, int64_t value)
 #if defined(CPR_HAS_GCC_ATOMICS)
 	return __atomic_exchange_n(&i->value, value, __ATOMIC_SEQ_CST);
 #elif defined(CPR_HAS_MSVC_ATOMICS)
-	return (int64_t)_InterlockedExchange64((volatile __int64 *)&i->value,
-					       (__int64)value);
+	return (int64_t)_InterlockedExchange64((volatile int64_t *)&i->value,
+					       (int64_t)value);
 #else
 	cpr_mutex_lock(&i->mutex);
 	int64_t prev = i->value;
@@ -513,10 +513,10 @@ bool cpr_atomici64_compare_exchange(CprAtomicI64 *a, int64_t *expected,
 	return __atomic_compare_exchange_n(&i->value, expected, desired, 0,
 					   __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
 #elif defined(CPR_HAS_MSVC_ATOMICS)
-	__int64 prev = _InterlockedCompareExchange64(
-		(volatile __int64 *)&i->value, (__int64)desired,
-		(__int64)*expected);
-	if (prev == (__int64)*expected)
+	int64_t prev = _InterlockedCompareExchange64(
+		(volatile int64_t *)&i->value, (int64_t)desired,
+		(int64_t)*expected);
+	if (prev == (int64_t)*expected)
 		return true;
 	*expected = (int64_t)prev;
 	return false;
@@ -539,8 +539,8 @@ int64_t cpr_atomici64_fetch_add(CprAtomicI64 *a, int64_t value)
 #if defined(CPR_HAS_GCC_ATOMICS)
 	return __atomic_fetch_add(&i->value, value, __ATOMIC_SEQ_CST);
 #elif defined(CPR_HAS_MSVC_ATOMICS)
-	return (int64_t)_InterlockedExchangeAdd64((volatile __int64 *)&i->value,
-						  (__int64)value);
+	return (int64_t)_InterlockedExchangeAdd64((volatile int64_t *)&i->value,
+						  (int64_t)value);
 #else
 	cpr_mutex_lock(&i->mutex);
 	int64_t prev = i->value;
@@ -556,8 +556,8 @@ int64_t cpr_atomici64_fetch_sub(CprAtomicI64 *a, int64_t value)
 #if defined(CPR_HAS_GCC_ATOMICS)
 	return __atomic_fetch_sub(&i->value, value, __ATOMIC_SEQ_CST);
 #elif defined(CPR_HAS_MSVC_ATOMICS)
-	return (int64_t)_InterlockedExchangeAdd64((volatile __int64 *)&i->value,
-						  -(__int64)value);
+	return (int64_t)_InterlockedExchangeAdd64((volatile int64_t *)&i->value,
+						  -(int64_t)value);
 #else
 	cpr_mutex_lock(&i->mutex);
 	int64_t prev = i->value;
@@ -573,8 +573,8 @@ int64_t cpr_atomici64_fetch_and(CprAtomicI64 *a, int64_t value)
 #if defined(CPR_HAS_GCC_ATOMICS)
 	return __atomic_fetch_and(&i->value, value, __ATOMIC_SEQ_CST);
 #elif defined(CPR_HAS_MSVC_ATOMICS)
-	return (int64_t)_InterlockedAnd64((volatile __int64 *)&i->value,
-					  (__int64)value);
+	return (int64_t)_InterlockedAnd64((volatile int64_t *)&i->value,
+					  (int64_t)value);
 #else
 	cpr_mutex_lock(&i->mutex);
 	int64_t prev = i->value;
@@ -590,8 +590,8 @@ int64_t cpr_atomici64_fetch_or(CprAtomicI64 *a, int64_t value)
 #if defined(CPR_HAS_GCC_ATOMICS)
 	return __atomic_fetch_or(&i->value, value, __ATOMIC_SEQ_CST);
 #elif defined(CPR_HAS_MSVC_ATOMICS)
-	return (int64_t)_InterlockedOr64((volatile __int64 *)&i->value,
-					 (__int64)value);
+	return (int64_t)_InterlockedOr64((volatile int64_t *)&i->value,
+					 (int64_t)value);
 #else
 	cpr_mutex_lock(&i->mutex);
 	int64_t prev = i->value;
@@ -607,8 +607,8 @@ int64_t cpr_atomici64_fetch_xor(CprAtomicI64 *a, int64_t value)
 #if defined(CPR_HAS_GCC_ATOMICS)
 	return __atomic_fetch_xor(&i->value, value, __ATOMIC_SEQ_CST);
 #elif defined(CPR_HAS_MSVC_ATOMICS)
-	return (int64_t)_InterlockedXor64((volatile __int64 *)&i->value,
-					  (__int64)value);
+	return (int64_t)_InterlockedXor64((volatile int64_t *)&i->value,
+					  (int64_t)value);
 #else
 	cpr_mutex_lock(&i->mutex);
 	int64_t prev = i->value;
@@ -628,7 +628,7 @@ CprResult cpr_atomicu64_init(CprAtomicU64 *a, uint64_t value)
 #if defined(CPR_HAS_GCC_ATOMICS)
 	__atomic_store_n(&i->value, value, __ATOMIC_SEQ_CST);
 #elif defined(CPR_HAS_MSVC_ATOMICS)
-	_InterlockedExchange64((volatile __int64 *)&i->value, (__int64)value);
+	_InterlockedExchange64((volatile int64_t *)&i->value, (int64_t)value);
 #else
 	CprResult r = cpr_mutex_init(&i->mutex);
 	if (cpr_err(r))
@@ -653,7 +653,7 @@ uint64_t cpr_atomicu64_load(CprAtomicU64 *a)
 #if defined(CPR_HAS_GCC_ATOMICS)
 	return __atomic_load_n(&i->value, __ATOMIC_SEQ_CST);
 #elif defined(CPR_HAS_MSVC_ATOMICS)
-	return (uint64_t)_InterlockedOr64((volatile __int64 *)&i->value, 0LL);
+	return (uint64_t)_InterlockedOr64((volatile int64_t *)&i->value, 0LL);
 #else
 	cpr_mutex_lock(&i->mutex);
 	uint64_t v = i->value;
@@ -668,7 +668,7 @@ void cpr_atomicu64_store(CprAtomicU64 *a, uint64_t value)
 #if defined(CPR_HAS_GCC_ATOMICS)
 	__atomic_store_n(&i->value, value, __ATOMIC_SEQ_CST);
 #elif defined(CPR_HAS_MSVC_ATOMICS)
-	_InterlockedExchange64((volatile __int64 *)&i->value, (__int64)value);
+	_InterlockedExchange64((volatile int64_t *)&i->value, (int64_t)value);
 #else
 	cpr_mutex_lock(&i->mutex);
 	i->value = value;
@@ -682,8 +682,8 @@ uint64_t cpr_atomicu64_exchange(CprAtomicU64 *a, uint64_t value)
 #if defined(CPR_HAS_GCC_ATOMICS)
 	return __atomic_exchange_n(&i->value, value, __ATOMIC_SEQ_CST);
 #elif defined(CPR_HAS_MSVC_ATOMICS)
-	return (uint64_t)_InterlockedExchange64((volatile __int64 *)&i->value,
-						(__int64)value);
+	return (uint64_t)_InterlockedExchange64((volatile int64_t *)&i->value,
+						(int64_t)value);
 #else
 	cpr_mutex_lock(&i->mutex);
 	uint64_t prev = i->value;
@@ -701,9 +701,9 @@ bool cpr_atomicu64_compare_exchange(CprAtomicU64 *a, uint64_t *expected,
 	return __atomic_compare_exchange_n(&i->value, expected, desired, 0,
 					   __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
 #elif defined(CPR_HAS_MSVC_ATOMICS)
-	__int64 prev = _InterlockedCompareExchange64(
-		(volatile __int64 *)&i->value, (__int64)desired,
-		(__int64)*expected);
+	int64_t prev = _InterlockedCompareExchange64(
+		(volatile int64_t *)&i->value, (int64_t)desired,
+		(int64_t)*expected);
 	if ((uint64_t)prev == *expected)
 		return true;
 	*expected = (uint64_t)prev;
@@ -728,7 +728,7 @@ uint64_t cpr_atomicu64_fetch_add(CprAtomicU64 *a, uint64_t value)
 	return __atomic_fetch_add(&i->value, value, __ATOMIC_SEQ_CST);
 #elif defined(CPR_HAS_MSVC_ATOMICS)
 	return (uint64_t)_InterlockedExchangeAdd64(
-		(volatile __int64 *)&i->value, (__int64)value);
+		(volatile int64_t *)&i->value, (int64_t)value);
 #else
 	cpr_mutex_lock(&i->mutex);
 	uint64_t prev = i->value;
@@ -745,7 +745,7 @@ uint64_t cpr_atomicu64_fetch_sub(CprAtomicU64 *a, uint64_t value)
 	return __atomic_fetch_sub(&i->value, value, __ATOMIC_SEQ_CST);
 #elif defined(CPR_HAS_MSVC_ATOMICS)
 	return (uint64_t)_InterlockedExchangeAdd64(
-		(volatile __int64 *)&i->value, -(__int64)value);
+		(volatile int64_t *)&i->value, -(int64_t)value);
 #else
 	cpr_mutex_lock(&i->mutex);
 	uint64_t prev = i->value;
@@ -761,8 +761,8 @@ uint64_t cpr_atomicu64_fetch_and(CprAtomicU64 *a, uint64_t value)
 #if defined(CPR_HAS_GCC_ATOMICS)
 	return __atomic_fetch_and(&i->value, value, __ATOMIC_SEQ_CST);
 #elif defined(CPR_HAS_MSVC_ATOMICS)
-	return (uint64_t)_InterlockedAnd64((volatile __int64 *)&i->value,
-					   (__int64)value);
+	return (uint64_t)_InterlockedAnd64((volatile int64_t *)&i->value,
+					   (int64_t)value);
 #else
 	cpr_mutex_lock(&i->mutex);
 	uint64_t prev = i->value;
@@ -778,8 +778,8 @@ uint64_t cpr_atomicu64_fetch_or(CprAtomicU64 *a, uint64_t value)
 #if defined(CPR_HAS_GCC_ATOMICS)
 	return __atomic_fetch_or(&i->value, value, __ATOMIC_SEQ_CST);
 #elif defined(CPR_HAS_MSVC_ATOMICS)
-	return (uint64_t)_InterlockedOr64((volatile __int64 *)&i->value,
-					  (__int64)value);
+	return (uint64_t)_InterlockedOr64((volatile int64_t *)&i->value,
+					  (int64_t)value);
 #else
 	cpr_mutex_lock(&i->mutex);
 	uint64_t prev = i->value;
@@ -795,8 +795,8 @@ uint64_t cpr_atomicu64_fetch_xor(CprAtomicU64 *a, uint64_t value)
 #if defined(CPR_HAS_GCC_ATOMICS)
 	return __atomic_fetch_xor(&i->value, value, __ATOMIC_SEQ_CST);
 #elif defined(CPR_HAS_MSVC_ATOMICS)
-	return (uint64_t)_InterlockedXor64((volatile __int64 *)&i->value,
-					   (__int64)value);
+	return (uint64_t)_InterlockedXor64((volatile int64_t *)&i->value,
+					   (int64_t)value);
 #else
 	cpr_mutex_lock(&i->mutex);
 	uint64_t prev = i->value;
@@ -843,7 +843,7 @@ void *cpr_atomicptr_load(CprAtomicPtr *a)
 #elif defined(CPR_HAS_MSVC_ATOMICS)
 	// No _InterlockedOrPointer exists; OR-with-zero on the underlying integer.
 #if defined(CPR_64BIT)
-	return (void *)_InterlockedOr64((volatile __int64 *)&i->value, 0LL);
+	return (void *)_InterlockedOr64((volatile int64_t *)&i->value, 0LL);
 #else
 	return (void *)(intptr_t)_InterlockedOr((volatile long *)&i->value, 0L);
 #endif

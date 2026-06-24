@@ -39,7 +39,7 @@ static void cpr__write_marker(char *buf, size_t n, const char *marker)
 
 static FILE *cpr__fopen(const char *path, const char *mode)
 {
-#if defined(CPR_COMPILER_MSVC)
+#if defined(CPR_PLATFORM_WINDOWS)
 	FILE *fp = NULL;
 	fopen_s(&fp, path, mode);
 	return fp;

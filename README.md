@@ -17,11 +17,12 @@ A lightweight, cross-platform utility library for C99.
 - **Arena Allocator** - Allocate many objects at once and free them all together in a single call, which is much faster than freeing each one individually. Works with heap memory or a fixed-size buffer you provide.
 
 - **Synchronization Primitives** - Tools for coordinating access to shared data across threads.
-  - **Mutex** - A lock that ensures only one thread can access shared data at a time.
-  - **Condition Variable** - Lets a thread sleep until another thread signals that something has changed.
-  - **Read-Write Lock** - Allows multiple threads to read shared data at the same time, while ensuring writers get exclusive access.
 
 - **Byte Size Utilities** - Macros for writing byte sizes in readable units (KB, MB, GB, KiB, MiB, GiB, and more) with conversions between them.
+
+- **Time/Clock Functions** - Macros for converting between time units (nanoseconds through hours) and for writing readable durations like `cpr_s(30)`. Also provides functions to get the current UTC time, a monotonic clock for measuring elapsed time, and date/time conversions for local and UTC wall-clock time.
+
+- **Logger** - A multi-sink logger with six log levels. Supports writing to the console, a file (with log rotation), or a custom callback. Includes optional thread-safety and shorthand macros like `cpr_info(...)` for quick use without managing a logger instance.
 
 ## Supported Platforms
 
@@ -51,9 +52,7 @@ It's probably **not** what you want if:
 
 ## Coming Soon
 
-- Logging system
 - Filesystem
-- Timing/Clock
 - Dynamic array type
 - Base64 encoding
 - CLI argument parsing

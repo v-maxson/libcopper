@@ -35,8 +35,9 @@ CPR_API uint64_t cpr_time_monotonic(void)
 	static LARGE_INTEGER s_freq = { { 0, 0 } };
 	LARGE_INTEGER counter;
 	if (s_freq.QuadPart == 0)
-		QueryPerformanceCounter(&counter);
-	return cpr_s_to_ms(counter.QuadPart) / s_freq.QuadPart;
+		QueryPerformanceFrequency(&s_freq);
+	QueryPerformanceCounter(&counter);
+	return (uint64_t)counter.QuadPart * 1000ULL / (uint64_t)s_freq.QuadPart;
 #else
 	struct timespec ts;
 	clock_gettime(CLOCK_MONOTONIC, &ts);

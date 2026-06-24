@@ -583,7 +583,11 @@ void test_console_sink_null_config(void)
 
 // --- Built-in file sink ---
 
+#if defined(CPR_PLATFORM_WINDOWS)
+#define TEST_LOG_PATH "cpr_test_log.log"
+#else
 #define TEST_LOG_PATH "/tmp/cpr_test_log.log"
+#endif
 
 void test_file_sink_null_config(void)
 {

@@ -1,7 +1,7 @@
 #ifndef CPR_TIME_H
 #define CPR_TIME_H
 
-#include "platform.h"
+#include "defs.h"
 #include <stdint.h>
 
 // --- Conversions to milliseconds ---

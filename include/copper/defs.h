@@ -1,5 +1,5 @@
-#ifndef CPR_PLATFORM_H
-#define CPR_PLATFORM_H
+#ifndef CPR_DEFS_H
+#define CPR_DEFS_H
 
 //* Platform detection & other platform dependencies. CMake sets these via compile definitions; the
 //* preprocessor fallback below covers direct inclusion without CMake.
@@ -159,4 +159,4 @@ typedef union {
 #define cpr_alignof(T) __alignof__(T)
 #endif
 
-#endif /* CPR_PLATFORM_H */
+#endif /* CPR_DEFS_H */

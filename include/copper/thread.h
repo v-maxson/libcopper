@@ -1,7 +1,7 @@
 #ifndef CPR_THREAD_H
 #define CPR_THREAD_H
 
-#include "platform.h"
+#include "defs.h"
 #include "result.h"
 #include <stdint.h>
 

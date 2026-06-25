@@ -1,7 +1,7 @@
 #ifndef CPR_ARENA_H
 #define CPR_ARENA_H
 
-#include "platform.h"
+#include "defs.h"
 #include "result.h"
 #include <stddef.h>
 #include <stdint.h>

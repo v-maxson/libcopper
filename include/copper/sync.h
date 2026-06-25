@@ -3,7 +3,7 @@
 
 //* This module contains synchonization primitives for safe multi-threaded programming.
 
-#include "platform.h"
+#include "defs.h"
 #include "result.h"
 #include <stdint.h>
 

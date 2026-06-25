@@ -1,7 +1,7 @@
 #ifndef CPR_RESULT_H
 #define CPR_RESULT_H
 
-#include "platform.h"
+#include "defs.h"
 
 #define CPR_RESULT_TABLE            \
 	CODE(CPR_OK, 0)             \

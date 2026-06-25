@@ -1,6 +1,6 @@
 #include "copper/arena.h"
 
-#include "copper/platform.h"
+#include "copper/defs.h"
 #include "copper/result.h"
 #include <stdlib.h>
 #include <string.h>

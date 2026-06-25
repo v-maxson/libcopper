@@ -6,7 +6,7 @@
 #include <copper/atomic.h>
 #include <copper/bytesize.h>
 #include <copper/log.h>
-#include <copper/platform.h>
+#include <copper/defs.h>
 #include <copper/result.h>
 #include <copper/sync.h>
 #include <copper/thread.h>

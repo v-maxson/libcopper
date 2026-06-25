@@ -1,7 +1,7 @@
 #ifndef CPR_LOG_H
 #define CPR_LOG_H
 
-#include "platform.h"
+#include "defs.h"
 #include "result.h"
 #include <stdarg.h>
 #include <stdbool.h>

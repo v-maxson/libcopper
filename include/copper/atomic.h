@@ -1,7 +1,7 @@
 #ifndef CPR_ATOMIC_H
 #define CPR_ATOMIC_H
 
-#include "platform.h"
+#include "defs.h"
 #include "result.h"
 #include <stdbool.h>
 #include <stdint.h>

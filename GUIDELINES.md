@@ -24,7 +24,7 @@ Format with `clang-format -i` before committing. Key style points (Linux kernel 
 
 ## Language standard
 
-C99 only. Guard all compiler extensions with a macro from `platform.h`:
+C99 only. Guard all compiler extensions with a macro from `defs.h`:
 
 ```c
 #if defined(CPR_COMPILER_GCC) || defined(CPR_COMPILER_CLANG)

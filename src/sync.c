@@ -21,9 +21,8 @@ typedef struct {
 #endif
 } CprInternalMutex;
 
-// fails the build if the mutex is ever larger then CPR_MUTEX_STORAGE_SIZE
-typedef uint8_t cpr__mutex_size_check
-	[sizeof(CprInternalMutex) <= CPR_MUTEX_STORAGE_SIZE ? 1 : -1];
+CPR_STATIC_ASSERT(sizeof(CprInternalMutex) <= CPR_MUTEX_STORAGE_SIZE,
+		  CprInternalMutex_fits_in_storage);
 
 CPR_INLINE static CprInternalMutex *cpr__cast_mutex(CprMutex *mutex)
 {
@@ -119,9 +118,8 @@ typedef struct {
 #endif
 } CprInternalCondVar;
 
-// fails to build if the condvar is ever larger then CPR_CONDVAR_STORAGE_SIZE
-typedef uint8_t cpr__condvar_size_check
-	[sizeof(CprInternalCondVar) <= CPR_CONDVAR_STORAGE_SIZE ? 1 : -1];
+CPR_STATIC_ASSERT(sizeof(CprInternalCondVar) <= CPR_CONDVAR_STORAGE_SIZE,
+		  CprInternalCondVar_fits_in_storage);
 
 CPR_INLINE static CprInternalCondVar *cpr__cast_condvar(CprCondVar *condvar)
 {
@@ -219,8 +217,8 @@ typedef struct {
 #endif
 } CprInternalRwLock;
 
-typedef uint8_t cpr__rwlock_size_check
-	[sizeof(CprInternalRwLock) <= CPR_RWLOCK_STORAGE_SIZE ? 1 : -1];
+CPR_STATIC_ASSERT(sizeof(CprInternalRwLock) <= CPR_RWLOCK_STORAGE_SIZE,
+		  CprInternalRwLock_fits_in_storage);
 
 CPR_INLINE static CprInternalRwLock *cpr__cast_rwlock(CprRwLock *rwlock)
 {

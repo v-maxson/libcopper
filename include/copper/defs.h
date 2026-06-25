@@ -159,4 +159,13 @@ typedef union {
 #define cpr_alignof(T) __alignof__(T)
 #endif
 
+// --- Static Assert ---
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+#define CPR_STATIC_ASSERT(cond, msg) _Static_assert(cond, msg)
+#else
+// Negative array size = compile error
+#define CPR_STATIC_ASSERT(cond, msg) \
+	typedef char static_assert_##msg[(cond) ? 1 : -1]
+#endif
+
 #endif /* CPR_DEFS_H */

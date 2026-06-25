@@ -46,8 +46,8 @@ typedef struct {
 
 // I64/U64 have the largest value type (8 bytes), so they produce the worst-case
 // struct size. If they fit, the 32-bit and pointer types fit too.
-typedef uint8_t cpr__atomic_size_check
-	[sizeof(CprInternalAtomicI64) <= CPR_ATOMIC_STORAGE_SIZE ? 1 : -1];
+CPR_STATIC_ASSERT(sizeof(CprInternalAtomicI64) <= CPR_ATOMIC_STORAGE_SIZE,
+		  CprInternalAtomicI64_fits_in_storage);
 
 // clang-format off
 CPR_INLINE static CprInternalAtomicI32 *cpr__cast_ai32(CprAtomicI32 *a) { return (CprInternalAtomicI32 *)a->_internal.storage; }

@@ -1,5 +1,5 @@
 #include "copper/sync.h"
-#include "copper/result.h"
+#include "copper/internal/int_error.h"
 #include <stdbool.h>
 
 // --- Platform Includes ---
@@ -29,20 +29,23 @@ CPR_INLINE static CprInternalMutex *cpr__cast_mutex(CprMutex *mutex)
 	return (CprInternalMutex *)mutex->_internal.storage;
 }
 
-CprResult cpr_mutex_init(CprMutex *mutex)
+bool cpr_mutex_init(CprMutex *mutex)
 {
-	if (mutex == NULL)
-		return CPR_ERR_INVALID;
+	if (mutex == NULL) {
+		cpr__set_error(CPR_ERR_INVALID, "mutex is NULL");
+		return false;
+	}
 
 #if defined(CPR_PLATFORM_WINDOWS)
 	InitializeCriticalSection(&cpr__cast_mutex(mutex)->handle);
 #elif defined(CPR_PLATFORM_UNIX) || defined(CPR_PLATFORM_APPLE)
-	return pthread_mutex_init(&cpr__cast_mutex(mutex)->handle, NULL) == 0 ?
-		       CPR_OK :
-		       CPR_ERR_SYNC;
+	if (pthread_mutex_init(&cpr__cast_mutex(mutex)->handle, NULL) != 0) {
+		cpr__set_error(CPR_ERR_SYNC, "failed to initialize mutex");
+		return false;
+	}
 #endif
 
-	return CPR_OK;
+	return true;
 }
 
 void cpr_mutex_destroy(CprMutex *mutex)
@@ -57,55 +60,68 @@ void cpr_mutex_destroy(CprMutex *mutex)
 #endif
 }
 
-CprResult cpr_mutex_lock(CprMutex *mutex)
+bool cpr_mutex_lock(CprMutex *mutex)
 {
-	if (mutex == NULL)
-		return CPR_ERR_INVALID;
+	if (mutex == NULL) {
+		cpr__set_error(CPR_ERR_INVALID, "mutex is NULL");
+		return false;
+	}
 
 #if defined(CPR_PLATFORM_WINDOWS)
 	EnterCriticalSection(&cpr__cast_mutex(mutex)->handle);
 #elif defined(CPR_PLATFORM_UNIX) || defined(CPR_PLATFORM_APPLE)
-	return pthread_mutex_lock(&cpr__cast_mutex(mutex)->handle) == 0 ?
-		       CPR_OK :
-		       CPR_ERR_SYNC;
+	if (pthread_mutex_lock(&cpr__cast_mutex(mutex)->handle) != 0) {
+		cpr__set_error(CPR_ERR_SYNC, "failed to lock mutex");
+		return false;
+	}
 #endif
 
-	return CPR_OK;
+	return true;
 }
 
-CprResult cpr_mutex_trylock(CprMutex *mutex)
+bool cpr_mutex_trylock(CprMutex *mutex)
 {
-	if (mutex == NULL)
-		return CPR_ERR_INVALID;
+	if (mutex == NULL) {
+		cpr__set_error(CPR_ERR_INVALID, "mutex is NULL");
+		return false;
+	}
 
 #if defined(CPR_PLATFORM_WINDOWS)
-	return TryEnterCriticalSection(&cpr__cast_mutex(mutex)->handle) ?
-		       CPR_OK :
-		       CPR_ERR_BUSY;
+	if (!TryEnterCriticalSection(&cpr__cast_mutex(mutex)->handle)) {
+		cpr__set_error(CPR_ERR_BUSY, "mutex is already held");
+		return false;
+	}
+	return true;
 #elif defined(CPR_PLATFORM_UNIX) || defined(CPR_PLATFORM_APPLE)
 	int r = pthread_mutex_trylock(&cpr__cast_mutex(mutex)->handle);
 	if (r == 0)
-		return CPR_OK;
-	if (r == EBUSY)
-		return CPR_ERR_BUSY;
-	return CPR_ERR_SYNC;
+		return true;
+	if (r == EBUSY) {
+		cpr__set_error(CPR_ERR_BUSY, "mutex is already held");
+		return false;
+	}
+	cpr__set_error(CPR_ERR_SYNC, "failed to try-lock mutex");
+	return false;
 #endif
 }
 
-CprResult cpr_mutex_unlock(CprMutex *mutex)
+bool cpr_mutex_unlock(CprMutex *mutex)
 {
-	if (mutex == NULL)
-		return CPR_ERR_INVALID;
+	if (mutex == NULL) {
+		cpr__set_error(CPR_ERR_INVALID, "mutex is NULL");
+		return false;
+	}
 
 #if defined(CPR_PLATFORM_WINDOWS)
 	LeaveCriticalSection(&cpr__cast_mutex(mutex)->handle);
 #elif defined(CPR_PLATFORM_UNIX) || defined(CPR_PLATFORM_APPLE)
-	return pthread_mutex_unlock(&cpr__cast_mutex(mutex)->handle) == 0 ?
-		       CPR_OK :
-		       CPR_ERR_SYNC;
+	if (pthread_mutex_unlock(&cpr__cast_mutex(mutex)->handle) != 0) {
+		cpr__set_error(CPR_ERR_SYNC, "failed to unlock mutex");
+		return false;
+	}
 #endif
 
-	return CPR_OK;
+	return true;
 }
 
 // --- Condition Variable ---
@@ -126,21 +142,24 @@ CPR_INLINE static CprInternalCondVar *cpr__cast_condvar(CprCondVar *condvar)
 	return (CprInternalCondVar *)condvar->_internal.storage;
 }
 
-CPR_API CprResult cpr_condvar_init(CprCondVar *condvar)
+CPR_API bool cpr_condvar_init(CprCondVar *condvar)
 {
-	if (condvar == NULL)
-		return CPR_ERR_INVALID;
+	if (condvar == NULL) {
+		cpr__set_error(CPR_ERR_INVALID, "condvar is NULL");
+		return false;
+	}
 
 #if defined(CPR_PLATFORM_WINDOWS)
 	InitializeConditionVariable(&cpr__cast_condvar(condvar)->handle);
 #elif defined(CPR_PLATFORM_UNIX) || defined(CPR_PLATFORM_APPLE)
-	return pthread_cond_init(&cpr__cast_condvar(condvar)->handle, NULL) ==
-			       0 ?
-		       CPR_OK :
-		       CPR_ERR_SYNC;
+	if (pthread_cond_init(&cpr__cast_condvar(condvar)->handle, NULL) != 0) {
+		cpr__set_error(CPR_ERR_SYNC,
+			       "failed to initialize condition variable");
+		return false;
+	}
 #endif
 
-	return CPR_OK;
+	return true;
 }
 
 CPR_API void cpr_condvar_destroy(CprCondVar *condvar)
@@ -155,56 +174,71 @@ CPR_API void cpr_condvar_destroy(CprCondVar *condvar)
 #endif
 }
 
-CPR_API CprResult cpr_condvar_wait(CprCondVar *condvar, CprMutex *mutex)
+CPR_API bool cpr_condvar_wait(CprCondVar *condvar, CprMutex *mutex)
 {
-	if (condvar == NULL || mutex == NULL)
-		return CPR_ERR_INVALID;
+	if (condvar == NULL || mutex == NULL) {
+		cpr__set_error(CPR_ERR_INVALID, "condvar or mutex is NULL");
+		return false;
+	}
 
 #if defined(CPR_PLATFORM_WINDOWS)
-	return SleepConditionVariableCS(&cpr__cast_condvar(condvar)->handle,
-					&cpr__cast_mutex(mutex)->handle,
-					INFINITE) ?
-		       CPR_OK :
-		       CPR_ERR_SYNC;
+	if (!SleepConditionVariableCS(&cpr__cast_condvar(condvar)->handle,
+				      &cpr__cast_mutex(mutex)->handle,
+				      INFINITE)) {
+		cpr__set_error(CPR_ERR_SYNC,
+			       "failed to wait on condition variable");
+		return false;
+	}
+	return true;
 #elif defined(CPR_PLATFORM_UNIX) || defined(CPR_PLATFORM_APPLE)
-	return pthread_cond_wait(&cpr__cast_condvar(condvar)->handle,
-				 &cpr__cast_mutex(mutex)->handle) == 0 ?
-		       CPR_OK :
-		       CPR_ERR_SYNC;
+	if (pthread_cond_wait(&cpr__cast_condvar(condvar)->handle,
+			      &cpr__cast_mutex(mutex)->handle) != 0) {
+		cpr__set_error(CPR_ERR_SYNC,
+			       "failed to wait on condition variable");
+		return false;
+	}
+	return true;
 #endif
 }
 
-CPR_API CprResult cpr_condvar_signal(CprCondVar *condvar)
+CPR_API bool cpr_condvar_signal(CprCondVar *condvar)
 {
-	if (condvar == NULL)
-		return CPR_ERR_INVALID;
+	if (condvar == NULL) {
+		cpr__set_error(CPR_ERR_INVALID, "condvar is NULL");
+		return false;
+	}
 
 #if defined(CPR_PLATFORM_WINDOWS)
 	WakeConditionVariable(&cpr__cast_condvar(condvar)->handle);
 #elif defined(CPR_PLATFORM_UNIX) || defined(CPR_PLATFORM_APPLE)
-	return pthread_cond_signal(&cpr__cast_condvar(condvar)->handle) == 0 ?
-		       CPR_OK :
-		       CPR_ERR_SYNC;
+	if (pthread_cond_signal(&cpr__cast_condvar(condvar)->handle) != 0) {
+		cpr__set_error(CPR_ERR_SYNC,
+			       "failed to signal condition variable");
+		return false;
+	}
 #endif
 
-	return CPR_OK;
+	return true;
 }
 
-CPR_API CprResult cpr_condvar_broadcast(CprCondVar *condvar)
+CPR_API bool cpr_condvar_broadcast(CprCondVar *condvar)
 {
-	if (condvar == NULL)
-		return CPR_ERR_INVALID;
+	if (condvar == NULL) {
+		cpr__set_error(CPR_ERR_INVALID, "condvar is NULL");
+		return false;
+	}
 
 #if defined(CPR_PLATFORM_WINDOWS)
 	WakeAllConditionVariable(&cpr__cast_condvar(condvar)->handle);
 #elif defined(CPR_PLATFORM_UNIX) || defined(CPR_PLATFORM_APPLE)
-	return pthread_cond_broadcast(&cpr__cast_condvar(condvar)->handle) ==
-			       0 ?
-		       CPR_OK :
-		       CPR_ERR_SYNC;
+	if (pthread_cond_broadcast(&cpr__cast_condvar(condvar)->handle) != 0) {
+		cpr__set_error(CPR_ERR_SYNC,
+			       "failed to broadcast on condition variable");
+		return false;
+	}
 #endif
 
-	return CPR_OK;
+	return true;
 }
 
 // --- Read-Write Lock ---
@@ -225,21 +259,23 @@ CPR_INLINE static CprInternalRwLock *cpr__cast_rwlock(CprRwLock *rwlock)
 	return (CprInternalRwLock *)rwlock->_internal.storage;
 }
 
-CPR_API CprResult cpr_rwlock_init(CprRwLock *rwlock)
+CPR_API bool cpr_rwlock_init(CprRwLock *rwlock)
 {
-	if (rwlock == NULL)
-		return CPR_ERR_INVALID;
+	if (rwlock == NULL) {
+		cpr__set_error(CPR_ERR_INVALID, "rwlock is NULL");
+		return false;
+	}
 
 #if defined(CPR_PLATFORM_WINDOWS)
 	InitializeSRWLock(&cpr__cast_rwlock(rwlock)->handle);
 #else
-	return pthread_rwlock_init(&cpr__cast_rwlock(rwlock)->handle, NULL) ==
-			       0 ?
-		       CPR_OK :
-		       CPR_ERR_SYNC;
+	if (pthread_rwlock_init(&cpr__cast_rwlock(rwlock)->handle, NULL) != 0) {
+		cpr__set_error(CPR_ERR_SYNC, "failed to initialize rwlock");
+		return false;
+	}
 #endif
 
-	return CPR_OK;
+	return true;
 }
 
 CPR_API void cpr_rwlock_destroy(CprRwLock *rwlock)
@@ -254,104 +290,130 @@ CPR_API void cpr_rwlock_destroy(CprRwLock *rwlock)
 #endif
 }
 
-CPR_API CprResult cpr_rwlock_lckread(CprRwLock *rwlock)
+CPR_API bool cpr_rwlock_lckread(CprRwLock *rwlock)
 {
-	if (rwlock == NULL)
-		return CPR_ERR_INVALID;
+	if (rwlock == NULL) {
+		cpr__set_error(CPR_ERR_INVALID, "rwlock is NULL");
+		return false;
+	}
 
 #if defined(CPR_PLATFORM_WINDOWS)
 	AcquireSRWLockShared(&cpr__cast_rwlock(rwlock)->handle);
 #else
-	return pthread_rwlock_rdlock(&cpr__cast_rwlock(rwlock)->handle) == 0 ?
-		       CPR_OK :
-		       CPR_ERR_SYNC;
+	if (pthread_rwlock_rdlock(&cpr__cast_rwlock(rwlock)->handle) != 0) {
+		cpr__set_error(CPR_ERR_SYNC, "failed to acquire read lock");
+		return false;
+	}
 #endif
 
-	return CPR_OK;
+	return true;
 }
 
-CPR_API CprResult cpr_rwlock_try_lckread(CprRwLock *rwlock)
+CPR_API bool cpr_rwlock_try_lckread(CprRwLock *rwlock)
 {
-	if (rwlock == NULL)
-		return CPR_ERR_INVALID;
+	if (rwlock == NULL) {
+		cpr__set_error(CPR_ERR_INVALID, "rwlock is NULL");
+		return false;
+	}
 
 #if defined(CPR_PLATFORM_WINDOWS)
-	return TryAcquireSRWLockShared(&cpr__cast_rwlock(rwlock)->handle) ?
-		       CPR_OK :
-		       CPR_ERR_BUSY;
+	if (!TryAcquireSRWLockShared(&cpr__cast_rwlock(rwlock)->handle)) {
+		cpr__set_error(CPR_ERR_BUSY, "read lock is exclusively held");
+		return false;
+	}
+	return true;
 #else
 	int r = pthread_rwlock_tryrdlock(&cpr__cast_rwlock(rwlock)->handle);
 	if (r == 0)
-		return CPR_OK;
-	if (r == EBUSY)
-		return CPR_ERR_BUSY;
-	return CPR_ERR_SYNC;
+		return true;
+	if (r == EBUSY) {
+		cpr__set_error(CPR_ERR_BUSY, "read lock is exclusively held");
+		return false;
+	}
+	cpr__set_error(CPR_ERR_SYNC, "failed to try-acquire read lock");
+	return false;
 #endif
 }
 
-CPR_API CprResult cpr_rwlock_ulckread(CprRwLock *rwlock)
+CPR_API bool cpr_rwlock_ulckread(CprRwLock *rwlock)
 {
-	if (rwlock == NULL)
-		return CPR_ERR_INVALID;
+	if (rwlock == NULL) {
+		cpr__set_error(CPR_ERR_INVALID, "rwlock is NULL");
+		return false;
+	}
 
 #if defined(CPR_PLATFORM_WINDOWS)
 	ReleaseSRWLockShared(&cpr__cast_rwlock(rwlock)->handle);
 #else
-	return pthread_rwlock_unlock(&cpr__cast_rwlock(rwlock)->handle) == 0 ?
-		       CPR_OK :
-		       CPR_ERR_SYNC;
+	if (pthread_rwlock_unlock(&cpr__cast_rwlock(rwlock)->handle) != 0) {
+		cpr__set_error(CPR_ERR_SYNC, "failed to release read lock");
+		return false;
+	}
 #endif
 
-	return CPR_OK;
+	return true;
 }
 
-CPR_API CprResult cpr_rwlock_lckwrite(CprRwLock *rwlock)
+CPR_API bool cpr_rwlock_lckwrite(CprRwLock *rwlock)
 {
-	if (rwlock == NULL)
-		return CPR_ERR_INVALID;
+	if (rwlock == NULL) {
+		cpr__set_error(CPR_ERR_INVALID, "rwlock is NULL");
+		return false;
+	}
 
 #if defined(CPR_PLATFORM_WINDOWS)
 	AcquireSRWLockExclusive(&cpr__cast_rwlock(rwlock)->handle);
 #else
-	return pthread_rwlock_wrlock(&cpr__cast_rwlock(rwlock)->handle) == 0 ?
-		       CPR_OK :
-		       CPR_ERR_SYNC;
+	if (pthread_rwlock_wrlock(&cpr__cast_rwlock(rwlock)->handle) != 0) {
+		cpr__set_error(CPR_ERR_SYNC, "failed to acquire write lock");
+		return false;
+	}
 #endif
 
-	return CPR_OK;
+	return true;
 }
 
-CPR_API CprResult cpr_rwlock_try_lckwrite(CprRwLock *rwlock)
+CPR_API bool cpr_rwlock_try_lckwrite(CprRwLock *rwlock)
 {
-	if (rwlock == NULL)
-		return CPR_ERR_INVALID;
+	if (rwlock == NULL) {
+		cpr__set_error(CPR_ERR_INVALID, "rwlock is NULL");
+		return false;
+	}
 
 #if defined(CPR_PLATFORM_WINDOWS)
-	return TryAcquireSRWLockExclusive(&cpr__cast_rwlock(rwlock)->handle) ?
-		       CPR_OK :
-		       CPR_ERR_BUSY;
+	if (!TryAcquireSRWLockExclusive(&cpr__cast_rwlock(rwlock)->handle)) {
+		cpr__set_error(CPR_ERR_BUSY, "lock is already held");
+		return false;
+	}
+	return true;
 #else
 	int r = pthread_rwlock_trywrlock(&cpr__cast_rwlock(rwlock)->handle);
 	if (r == 0)
-		return CPR_OK;
-	if (r == EBUSY)
-		return CPR_ERR_BUSY;
-	return CPR_ERR_SYNC;
+		return true;
+	if (r == EBUSY) {
+		cpr__set_error(CPR_ERR_BUSY, "lock is already held");
+		return false;
+	}
+	cpr__set_error(CPR_ERR_SYNC, "failed to try-acquire write lock");
+	return false;
 #endif
 }
 
-CPR_API CprResult cpr_rwlock_ulckwrite(CprRwLock *rwlock)
+CPR_API bool cpr_rwlock_ulckwrite(CprRwLock *rwlock)
 {
-	if (rwlock == NULL)
-		return CPR_ERR_INVALID;
+	if (rwlock == NULL) {
+		cpr__set_error(CPR_ERR_INVALID, "rwlock is NULL");
+		return false;
+	}
 
 #if defined(CPR_PLATFORM_WINDOWS)
 	ReleaseSRWLockExclusive(&cpr__cast_rwlock(rwlock)->handle);
 #else
-	return pthread_rwlock_unlock(&cpr__cast_rwlock(rwlock)->handle) == 0 ?
-		       CPR_OK :
-		       CPR_ERR_SYNC;
+	if (pthread_rwlock_unlock(&cpr__cast_rwlock(rwlock)->handle) != 0) {
+		cpr__set_error(CPR_ERR_SYNC, "failed to release write lock");
+		return false;
+	}
 #endif
 
-	return CPR_OK;
+	return true;
 }

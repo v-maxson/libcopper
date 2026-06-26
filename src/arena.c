@@ -1,6 +1,7 @@
 #include "copper/arena.h"
 
 #include "copper/defs.h"
+#include "copper/internal/int_error.h"
 #include "copper/result.h"
 #include <stdlib.h>
 #include <string.h>
@@ -40,29 +41,35 @@ static int cpr__is_pow2(size_t v)
 
 // --- Initializers ---
 
-CPR_API CprResult cpr_arena_init(CprArena *arena, CprArenaAllocator allocator,
-				 size_t capacity)
+CPR_API bool cpr_arena_init(CprArena *arena, CprArenaAllocator allocator,
+			    size_t capacity)
 {
 	void *buf = NULL;
 
-	if (arena == NULL || capacity == 0 || allocator.alloc == NULL)
-		return CPR_ERR_INVALID;
+	if (arena == NULL || capacity == 0 || allocator.alloc == NULL) {
+		cpr__set_error(CPR_ERR_INVALID, "invalid arguments");
+		return false;
+	}
 
 	buf = allocator.alloc(allocator.user_data, capacity);
-	if (buf == NULL)
-		return CPR_ERR_OOM;
+	if (buf == NULL) {
+		cpr__set_error(CPR_ERR_OOM, "out of memory");
+		return false;
+	}
 
 	arena->buf = buf;
 	arena->cap = capacity;
 	arena->offset = arena->prev_offset = 0;
 	arena->allocator = allocator;
-	return CPR_OK;
+	return true;
 }
 
-CPR_API CprResult cpr_arena_init_buf(CprArena *arena, void *buf, size_t size)
+CPR_API bool cpr_arena_init_buf(CprArena *arena, void *buf, size_t size)
 {
-	if (arena == NULL || buf == NULL || size == 0)
-		return CPR_ERR_INVALID;
+	if (arena == NULL || buf == NULL || size == 0) {
+		cpr__set_error(CPR_ERR_INVALID, "invalid arguments");
+		return false;
+	}
 
 	arena->buf = buf;
 	arena->cap = size;
@@ -72,7 +79,7 @@ CPR_API CprResult cpr_arena_init_buf(CprArena *arena, void *buf, size_t size)
 	arena->allocator.free = NULL;
 	arena->allocator.user_data = NULL;
 
-	return CPR_OK;
+	return true;
 }
 
 // --- Allocation ---

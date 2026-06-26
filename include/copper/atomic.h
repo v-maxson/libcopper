@@ -2,7 +2,6 @@
 #define CPR_ATOMIC_H
 
 #include "defs.h"
-#include "result.h"
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -69,7 +68,8 @@ extern "C" {
 
 // --- CprAtomicI32 ---
 
-CPR_API CprResult cpr_atomici32_init(CprAtomicI32 *a, int32_t value);
+/// Returns false on failure; call cpr_get_error() to check the error code.
+CPR_API bool cpr_atomici32_init(CprAtomicI32 *a, int32_t value);
 CPR_API void cpr_atomici32_destroy(CprAtomicI32 *a);
 
 CPR_API int32_t cpr_atomici32_load(CprAtomicI32 *a);
@@ -85,7 +85,8 @@ CPR_API int32_t cpr_atomici32_fetch_xor(CprAtomicI32 *a, int32_t value);
 
 // --- CprAtomicU32 ---
 
-CPR_API CprResult cpr_atomicu32_init(CprAtomicU32 *a, uint32_t value);
+/// Returns false on failure; call cpr_get_error() to check the error code.
+CPR_API bool cpr_atomicu32_init(CprAtomicU32 *a, uint32_t value);
 CPR_API void cpr_atomicu32_destroy(CprAtomicU32 *a);
 
 CPR_API uint32_t cpr_atomicu32_load(CprAtomicU32 *a);
@@ -101,7 +102,8 @@ CPR_API uint32_t cpr_atomicu32_fetch_xor(CprAtomicU32 *a, uint32_t value);
 
 // --- CprAtomicI64 ---
 
-CPR_API CprResult cpr_atomici64_init(CprAtomicI64 *a, int64_t value);
+/// Returns false on failure; call cpr_get_error() to check the error code.
+CPR_API bool cpr_atomici64_init(CprAtomicI64 *a, int64_t value);
 CPR_API void cpr_atomici64_destroy(CprAtomicI64 *a);
 
 CPR_API int64_t cpr_atomici64_load(CprAtomicI64 *a);
@@ -117,7 +119,8 @@ CPR_API int64_t cpr_atomici64_fetch_xor(CprAtomicI64 *a, int64_t value);
 
 // --- CprAtomicU64 ---
 
-CPR_API CprResult cpr_atomicu64_init(CprAtomicU64 *a, uint64_t value);
+/// Returns false on failure; call cpr_get_error() to check the error code.
+CPR_API bool cpr_atomicu64_init(CprAtomicU64 *a, uint64_t value);
 CPR_API void cpr_atomicu64_destroy(CprAtomicU64 *a);
 
 CPR_API uint64_t cpr_atomicu64_load(CprAtomicU64 *a);
@@ -134,7 +137,8 @@ CPR_API uint64_t cpr_atomicu64_fetch_xor(CprAtomicU64 *a, uint64_t value);
 // --- CprAtomicPtr ---
 // Pointer atomics omit arithmetic; only init/destroy/load/store/exchange/CAS.
 
-CPR_API CprResult cpr_atomicptr_init(CprAtomicPtr *a, void *value);
+/// Returns false on failure; call cpr_get_error() to check the error code.
+CPR_API bool cpr_atomicptr_init(CprAtomicPtr *a, void *value);
 CPR_API void cpr_atomicptr_destroy(CprAtomicPtr *a);
 
 CPR_API void *cpr_atomicptr_load(CprAtomicPtr *a);

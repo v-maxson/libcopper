@@ -1,5 +1,6 @@
 #include "copper/atomic.h"
 
+#include "copper/internal/int_error.h"
 #include "copper/sync.h" // IWYU pragma: keep
 #include <stdbool.h>
 #include <stddef.h>
@@ -59,22 +60,23 @@ CPR_INLINE static CprInternalAtomicPtr *cpr__cast_aptr(CprAtomicPtr *a) { return
 
 // --- CprAtomicI32 ---
 
-CprResult cpr_atomici32_init(CprAtomicI32 *a, int32_t value)
+bool cpr_atomici32_init(CprAtomicI32 *a, int32_t value)
 {
-	if (a == NULL)
-		return CPR_ERR_INVALID;
+	if (a == NULL) {
+		cpr__set_error(CPR_ERR_INVALID, "a is NULL");
+		return false;
+	}
 	CprInternalAtomicI32 *i = cpr__cast_ai32(a);
 #if defined(CPR_HAS_GCC_ATOMICS)
 	__atomic_store_n(&i->value, value, __ATOMIC_SEQ_CST);
 #elif defined(CPR_HAS_MSVC_ATOMICS)
 	_InterlockedExchange((volatile long *)&i->value, (long)value);
 #else
-	CprResult r = cpr_mutex_init(&i->mutex);
-	if (cpr_err(r))
-		return r;
+	if (!cpr_mutex_init(&i->mutex))
+		return false;
 	i->value = value;
 #endif
-	return CPR_OK;
+	return true;
 }
 
 void cpr_atomici32_destroy(CprAtomicI32 *a)
@@ -245,22 +247,23 @@ int32_t cpr_atomici32_fetch_xor(CprAtomicI32 *a, int32_t value)
 
 // --- CprAtomicU32 ---
 
-CprResult cpr_atomicu32_init(CprAtomicU32 *a, uint32_t value)
+bool cpr_atomicu32_init(CprAtomicU32 *a, uint32_t value)
 {
-	if (a == NULL)
-		return CPR_ERR_INVALID;
+	if (a == NULL) {
+		cpr__set_error(CPR_ERR_INVALID, "a is NULL");
+		return false;
+	}
 	CprInternalAtomicU32 *i = cpr__cast_au32(a);
 #if defined(CPR_HAS_GCC_ATOMICS)
 	__atomic_store_n(&i->value, value, __ATOMIC_SEQ_CST);
 #elif defined(CPR_HAS_MSVC_ATOMICS)
 	_InterlockedExchange((volatile long *)&i->value, (long)value);
 #else
-	CprResult r = cpr_mutex_init(&i->mutex);
-	if (cpr_err(r))
-		return r;
+	if (!cpr_mutex_init(&i->mutex))
+		return false;
 	i->value = value;
 #endif
-	return CPR_OK;
+	return true;
 }
 
 void cpr_atomicu32_destroy(CprAtomicU32 *a)
@@ -432,22 +435,23 @@ uint32_t cpr_atomicu32_fetch_xor(CprAtomicU32 *a, uint32_t value)
 
 // --- CprAtomicI64 ---
 
-CprResult cpr_atomici64_init(CprAtomicI64 *a, int64_t value)
+bool cpr_atomici64_init(CprAtomicI64 *a, int64_t value)
 {
-	if (a == NULL)
-		return CPR_ERR_INVALID;
+	if (a == NULL) {
+		cpr__set_error(CPR_ERR_INVALID, "a is NULL");
+		return false;
+	}
 	CprInternalAtomicI64 *i = cpr__cast_ai64(a);
 #if defined(CPR_HAS_GCC_ATOMICS)
 	__atomic_store_n(&i->value, value, __ATOMIC_SEQ_CST);
 #elif defined(CPR_HAS_MSVC_ATOMICS)
 	_InterlockedExchange64((volatile int64_t *)&i->value, (int64_t)value);
 #else
-	CprResult r = cpr_mutex_init(&i->mutex);
-	if (cpr_err(r))
-		return r;
+	if (!cpr_mutex_init(&i->mutex))
+		return false;
 	i->value = value;
 #endif
-	return CPR_OK;
+	return true;
 }
 
 void cpr_atomici64_destroy(CprAtomicI64 *a)
@@ -620,22 +624,23 @@ int64_t cpr_atomici64_fetch_xor(CprAtomicI64 *a, int64_t value)
 
 // --- CprAtomicU64 ---
 
-CprResult cpr_atomicu64_init(CprAtomicU64 *a, uint64_t value)
+bool cpr_atomicu64_init(CprAtomicU64 *a, uint64_t value)
 {
-	if (a == NULL)
-		return CPR_ERR_INVALID;
+	if (a == NULL) {
+		cpr__set_error(CPR_ERR_INVALID, "a is NULL");
+		return false;
+	}
 	CprInternalAtomicU64 *i = cpr__cast_au64(a);
 #if defined(CPR_HAS_GCC_ATOMICS)
 	__atomic_store_n(&i->value, value, __ATOMIC_SEQ_CST);
 #elif defined(CPR_HAS_MSVC_ATOMICS)
 	_InterlockedExchange64((volatile int64_t *)&i->value, (int64_t)value);
 #else
-	CprResult r = cpr_mutex_init(&i->mutex);
-	if (cpr_err(r))
-		return r;
+	if (!cpr_mutex_init(&i->mutex))
+		return false;
 	i->value = value;
 #endif
-	return CPR_OK;
+	return true;
 }
 
 void cpr_atomicu64_destroy(CprAtomicU64 *a)
@@ -808,22 +813,23 @@ uint64_t cpr_atomicu64_fetch_xor(CprAtomicU64 *a, uint64_t value)
 
 // --- CprAtomicPtr ---
 
-CprResult cpr_atomicptr_init(CprAtomicPtr *a, void *value)
+bool cpr_atomicptr_init(CprAtomicPtr *a, void *value)
 {
-	if (a == NULL)
-		return CPR_ERR_INVALID;
+	if (a == NULL) {
+		cpr__set_error(CPR_ERR_INVALID, "a is NULL");
+		return false;
+	}
 	CprInternalAtomicPtr *i = cpr__cast_aptr(a);
 #if defined(CPR_HAS_GCC_ATOMICS)
 	__atomic_store_n(&i->value, value, __ATOMIC_SEQ_CST);
 #elif defined(CPR_HAS_MSVC_ATOMICS)
 	_InterlockedExchangePointer((void *volatile *)&i->value, value);
 #else
-	CprResult r = cpr_mutex_init(&i->mutex);
-	if (cpr_err(r))
-		return r;
+	if (!cpr_mutex_init(&i->mutex))
+		return false;
 	i->value = value;
 #endif
-	return CPR_OK;
+	return true;
 }
 
 void cpr_atomicptr_destroy(CprAtomicPtr *a)

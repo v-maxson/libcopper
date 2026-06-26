@@ -1,5 +1,6 @@
 #include "copper/log.h"
 
+#include "copper/internal/int_error.h"
 #include "copper/result.h"
 #include "copper/sync.h"
 #include "copper/time.h"
@@ -318,31 +319,28 @@ static void cpr__file_destroy(CprLogSink *sink)
 	free(fs);
 }
 
-CprLogSink *cpr_log_file_sink(const CprFileSinkConfig *config,
-			      CprResult *out_result)
+CprLogSink *cpr_log_file_sink(const CprFileSinkConfig *config)
 {
 	CprFileSink *fs;
 	const char *mode;
 	CprDateTime dt;
 
 	if (!config || !config->path) {
-		if (out_result)
-			*out_result = CPR_ERR_INVALID;
+		cpr__set_error(CPR_ERR_INVALID,
+			       !config ? "config is NULL" : "path is NULL");
 		return NULL;
 	}
 
 	fs = malloc(sizeof(*fs));
 	if (!fs) {
-		if (out_result)
-			*out_result = CPR_ERR_OOM;
+		cpr__set_error(CPR_ERR_OOM, "out of memory");
 		return NULL;
 	}
 
 	fs->path = malloc(strlen(config->path) + 1);
 	if (!fs->path) {
 		free(fs);
-		if (out_result)
-			*out_result = CPR_ERR_OOM;
+		cpr__set_error(CPR_ERR_OOM, "out of memory");
 		return NULL;
 	}
 	memcpy(fs->path, config->path, strlen(config->path) + 1);
@@ -356,8 +354,7 @@ CprLogSink *cpr_log_file_sink(const CprFileSinkConfig *config,
 	if (!fs->fp) {
 		free(fs->path);
 		free(fs);
-		if (out_result)
-			*out_result = CPR_ERR_IO;
+		cpr__set_error(CPR_ERR_IO, "fopen failed");
 		return NULL;
 	}
 
@@ -377,8 +374,6 @@ CprLogSink *cpr_log_file_sink(const CprFileSinkConfig *config,
 	fs->base.flush = cpr__file_flush;
 	fs->base.destroy = cpr__file_destroy;
 
-	if (out_result)
-		*out_result = CPR_OK;
 	return &fs->base;
 }
 
@@ -466,15 +461,20 @@ void cpr_log_destroy(CprLogger *logger)
 	free(logger);
 }
 
-CprResult cpr_log_add_sink(CprLogger *logger, CprLogSink *sink)
+bool cpr_log_add_sink(CprLogger *logger, CprLogSink *sink)
 {
-	if (!logger || !sink)
-		return CPR_ERR_INVALID;
-	if (logger->sink_count >= CPR_LOG_MAX_SINKS)
-		return CPR_ERR_EXHAUSTED;
+	if (!logger || !sink) {
+		cpr__set_error(CPR_ERR_INVALID,
+			       !logger ? "logger is NULL" : "sink is NULL");
+		return false;
+	}
+	if (logger->sink_count >= CPR_LOG_MAX_SINKS) {
+		cpr__set_error(CPR_ERR_EXHAUSTED, "sink limit reached");
+		return false;
+	}
 
 	logger->sinks[logger->sink_count++] = sink;
-	return CPR_OK;
+	return true;
 }
 
 void cpr_log_remove_sink(CprLogger *logger, CprLogSink *sink)

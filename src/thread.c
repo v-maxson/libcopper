@@ -1,5 +1,6 @@
 #include "copper/thread.h"
 
+#include "copper/internal/int_error.h"
 #include "copper/result.h"
 #include "copper/time.h"
 #include <stddef.h>
@@ -60,26 +61,24 @@ static void *cpr__thread_trampoline(void *arg)
 
 // --- Thread ---
 
-CprThread *cpr_thrd_create(CprThreadFn fn, void *arg, CprResult *out_result)
+CprThread *cpr_thrd_create(CprThreadFn fn, void *arg)
 {
-#define RETURN_ERR(e)                      \
-	do {                               \
-		if (out_result)            \
-			*out_result = (e); \
-		return NULL;               \
-	} while (0)
-
-	if (fn == NULL)
-		RETURN_ERR(CPR_ERR_INVALID);
+	if (fn == NULL) {
+		cpr__set_error(CPR_ERR_INVALID, "fn is NULL");
+		return NULL;
+	}
 
 	CprThread *thread = malloc(sizeof(CprThread));
-	if (thread == NULL)
-		RETURN_ERR(CPR_ERR_OOM);
+	if (thread == NULL) {
+		cpr__set_error(CPR_ERR_OOM, "out of memory");
+		return NULL;
+	}
 
 	CprThreadTrampoline *trampoline = malloc(sizeof(CprThreadTrampoline));
 	if (!trampoline) {
 		free(thread);
-		RETURN_ERR(CPR_ERR_OOM);
+		cpr__set_error(CPR_ERR_OOM, "out of memory");
+		return NULL;
 	}
 
 	trampoline->fn = fn;
@@ -91,7 +90,8 @@ CprThread *cpr_thrd_create(CprThreadFn fn, void *arg, CprResult *out_result)
 	if (thread->handle == NULL) {
 		free(trampoline);
 		free(thread);
-		RETURN_ERR(CPR_ERR_SYNC);
+		cpr__set_error(CPR_ERR_SYNC, "CreateThread failed");
+		return NULL;
 	}
 #else
 	int r = pthread_create(&thread->handle, NULL, cpr__thread_trampoline,
@@ -99,54 +99,63 @@ CprThread *cpr_thrd_create(CprThreadFn fn, void *arg, CprResult *out_result)
 	if (r != 0) {
 		free(trampoline);
 		free(thread);
-		RETURN_ERR(CPR_ERR_SYNC);
+		cpr__set_error(CPR_ERR_SYNC, "pthread_create failed");
+		return NULL;
 	}
 #endif
 
-	if (out_result)
-		*out_result = CPR_OK;
-
 	return thread;
-#undef RETURN_ERR
 }
 
-CprResult cpr_thrd_join(CprThread *thread)
+bool cpr_thrd_join(CprThread *thread)
 {
-	if (thread == NULL)
-		return CPR_ERR_INVALID;
+	if (thread == NULL) {
+		cpr__set_error(CPR_ERR_INVALID, "thread is NULL");
+		return false;
+	}
 
-	CprResult result = CPR_OK;
+	bool ok = true;
 
 #if defined(CPR_PLATFORM_WINDOWS)
-	if (WaitForSingleObject(thread->handle, INFINITE) != WAIT_OBJECT_0)
-		result = CPR_ERR_SYNC;
+	if (WaitForSingleObject(thread->handle, INFINITE) != WAIT_OBJECT_0) {
+		cpr__set_error(CPR_ERR_SYNC, "WaitForSingleObject failed");
+		ok = false;
+	}
 	CloseHandle(thread->handle);
 #else
-	if (pthread_join(thread->handle, NULL) != 0)
-		result = CPR_ERR_SYNC;
+	if (pthread_join(thread->handle, NULL) != 0) {
+		cpr__set_error(CPR_ERR_SYNC, "pthread_join failed");
+		ok = false;
+	}
 #endif
 
 	free(thread);
-	return result;
+	return ok;
 }
 
-CprResult cpr_thrd_detach(CprThread *thread)
+bool cpr_thrd_detach(CprThread *thread)
 {
-	if (thread == NULL)
-		return CPR_ERR_INVALID;
+	if (thread == NULL) {
+		cpr__set_error(CPR_ERR_INVALID, "thread is NULL");
+		return false;
+	}
 
-	CprResult result = CPR_OK;
+	bool ok = true;
 
 #if defined(CPR_PLATFORM_WINDOWS)
-	if (!CloseHandle(thread->handle))
-		result = CPR_ERR_SYNC;
+	if (!CloseHandle(thread->handle)) {
+		cpr__set_error(CPR_ERR_SYNC, "CloseHandle failed");
+		ok = false;
+	}
 #else
-	if (pthread_detach(thread->handle) != 0)
-		result = CPR_ERR_SYNC;
+	if (pthread_detach(thread->handle) != 0) {
+		cpr__set_error(CPR_ERR_SYNC, "pthread_detach failed");
+		ok = false;
+	}
 #endif
 
 	free(thread);
-	return result;
+	return ok;
 }
 
 CprThreadId cpr_thrd_get_id(const CprThread *thread)
@@ -193,36 +202,30 @@ void cpr_thrd_yield(void)
 
 // --- TLS ---
 
-CprTls *cpr_tls_create(CprTlsDestructor destructor, CprResult *out_result)
+CprTls *cpr_tls_create(CprTlsDestructor destructor)
 {
-#define RETURN_ERR(err)                      \
-	do {                                 \
-		if (out_result)              \
-			*out_result = (err); \
-		return NULL;                 \
-	} while (0)
-
 	CprTls *tls = malloc(sizeof(CprTls));
-	if (tls == NULL)
-		RETURN_ERR(CPR_ERR_OOM);
+	if (tls == NULL) {
+		cpr__set_error(CPR_ERR_OOM, "out of memory");
+		return NULL;
+	}
 
 #if defined(CPR_PLATFORM_WINDOWS)
 	tls->slot = FlsAlloc((PFLS_CALLBACK_FUNCTION)destructor);
 	if (tls->slot == FLS_OUT_OF_INDEXES) {
 		free(tls);
-		RETURN_ERR(CPR_ERR_EXHAUSTED);
+		cpr__set_error(CPR_ERR_EXHAUSTED, "FlsAlloc failed");
+		return NULL;
 	}
 #else
 	if (pthread_key_create(&tls->key, destructor) != 0) {
 		free(tls);
-		RETURN_ERR(CPR_ERR_EXHAUSTED);
+		cpr__set_error(CPR_ERR_EXHAUSTED, "pthread_key_create failed");
+		return NULL;
 	}
 #endif
 
-	if (out_result)
-		*out_result = CPR_OK;
 	return tls;
-#undef RETURN_ERR
 }
 
 void cpr_tls_destroy(CprTls *tls)
@@ -239,16 +242,25 @@ void cpr_tls_destroy(CprTls *tls)
 	free(tls);
 }
 
-CprResult cpr_tls_set(CprTls *tls, void *value)
+bool cpr_tls_set(CprTls *tls, void *value)
 {
-	if (tls == NULL)
-		return CPR_ERR_INVALID;
+	if (tls == NULL) {
+		cpr__set_error(CPR_ERR_INVALID, "tls is NULL");
+		return false;
+	}
 
 #if defined(CPR_PLATFORM_WINDOWS)
-	return FlsSetValue(tls->slot, value) ? CPR_OK : CPR_ERR_SYNC;
+	if (!FlsSetValue(tls->slot, value)) {
+		cpr__set_error(CPR_ERR_SYNC, "FlsSetValue failed");
+		return false;
+	}
+	return true;
 #else
-	return pthread_setspecific(tls->key, value) == 0 ? CPR_OK :
-							   CPR_ERR_SYNC;
+	if (pthread_setspecific(tls->key, value) != 0) {
+		cpr__set_error(CPR_ERR_SYNC, "pthread_setspecific failed");
+		return false;
+	}
+	return true;
 #endif
 }
 

@@ -2,7 +2,6 @@
 #define CPR_LOG_H
 
 #include "defs.h"
-#include "result.h"
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -156,8 +155,7 @@ typedef struct {
 extern "C" {
 #endif
 
-CPR_API CprLogSink *cpr_log_file_sink(const CprFileSinkConfig *config,
-				      CprResult *out_result);
+CPR_API CprLogSink *cpr_log_file_sink(const CprFileSinkConfig *config);
 
 #ifdef __cplusplus
 }
@@ -204,9 +202,9 @@ CPR_API CprLogger *cpr_log_create(const CprLoggerConfig *config);
 /// Flushes and frees the `logger`. `logger` is not valid after this is caled.
 CPR_API void cpr_log_destroy(CprLogger *logger);
 
-/// Sinks are *not* owned by the logger. Call `cpr_log_sink_destroy` seperately.
-/// Not thread-safe.
-CPR_API CprResult cpr_log_add_sink(CprLogger *logger, CprLogSink *sink);
+/// Sinks are *not* owned by the logger. Call `cpr_log_sink_destroy` separately.
+/// Not thread-safe. Returns false if the logger already has the maximum number of sinks.
+CPR_API bool cpr_log_add_sink(CprLogger *logger, CprLogSink *sink);
 
 /// Sinks are *not* owned by the logger. Call `cpr_log_sink_destroy` seperately.
 /// Not thread-safe.
@@ -238,11 +236,11 @@ CPR_API void cpr_log_set_default(CprLogger *logger);
 #define CPR_LOG_MIN_LEVEL CPR_LOG_TRACE
 #endif
 
-#define cpr_log(logger, level, ...)                                       \
-	do {                                                              \
-		if ((level) >= CPR_LOG_MIN_LEVEL)                         \
-			cpr_log_write(logger, level, __FILE__, __LINE__,  \
-				      __func__, __VA_ARGS__);             \
+#define cpr_log(logger, level, ...)                                      \
+	do {                                                             \
+		if ((level) >= CPR_LOG_MIN_LEVEL)                        \
+			cpr_log_write(logger, level, __FILE__, __LINE__, \
+				      __func__, __VA_ARGS__);            \
 	} while (0)
 
 #define cpr_log_trace(logger, ...) cpr_log(logger, CPR_LOG_TRACE, __VA_ARGS__)

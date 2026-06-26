@@ -3,6 +3,7 @@
 
 #include "defs.h"
 #include "result.h"
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -43,12 +44,14 @@ CPR_API CprArenaAllocator cpr_arena_alloc_default(void);
 // --- Initializers ---
 
 /// Initializes the `arena` with the given `allocator`. `capacity` is the number of bytes to request from the allocator.
-CPR_API CprResult cpr_arena_init(CprArena *arena, CprArenaAllocator allocator,
-				 size_t capacity);
+/// Returns false on failure; call cpr_get_error() to check the error code.
+CPR_API bool cpr_arena_init(CprArena *arena, CprArenaAllocator allocator,
+			    size_t capacity);
 
 /// Initializes the `arena` with an externally-owned buffer.
-/// The arena never calls free; the caller is responsible for the lifetime of `buf`
-CPR_API CprResult cpr_arena_init_buf(CprArena *arena, void *buf, size_t size);
+/// The arena never calls free; the caller is responsible for the lifetime of `buf`.
+/// Returns false on failure; call cpr_get_error() to check the error code.
+CPR_API bool cpr_arena_init_buf(CprArena *arena, void *buf, size_t size);
 
 // --- Allocation ---
 

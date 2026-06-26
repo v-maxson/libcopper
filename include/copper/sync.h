@@ -4,7 +4,7 @@
 //* This module contains synchonization primitives for safe multi-threaded programming.
 
 #include "defs.h"
-#include "result.h"
+#include <stdbool.h>
 #include <stdint.h>
 
 // --- Mutex ---
@@ -24,12 +24,16 @@ typedef struct {
 extern "C" {
 #endif
 
-CPR_API CprResult cpr_mutex_init(CprMutex *mutex);
+/// Returns false on failure; call cpr_get_error() to check the error code.
+CPR_API bool cpr_mutex_init(CprMutex *mutex);
 CPR_API void cpr_mutex_destroy(CprMutex *mutex);
-CPR_API CprResult cpr_mutex_lock(CprMutex *mutex);
-CPR_API CprResult
-cpr_mutex_trylock(CprMutex *mutex); ///< Returns CPR_ERR_BUSY if not acquired.
-CPR_API CprResult cpr_mutex_unlock(CprMutex *mutex);
+/// Returns false on failure; call cpr_get_error() to check the error code.
+CPR_API bool cpr_mutex_lock(CprMutex *mutex);
+/// Returns false if the lock could not be acquired; call cpr_get_error() for details.
+/// CPR_ERR_BUSY means the lock was already held; other codes indicate an OS-level failure.
+CPR_API bool cpr_mutex_trylock(CprMutex *mutex);
+/// Returns false on failure; call cpr_get_error() to check the error code.
+CPR_API bool cpr_mutex_unlock(CprMutex *mutex);
 
 #ifdef __cplusplus
 }
@@ -51,19 +55,23 @@ typedef struct {
 extern "C" {
 #endif
 
-CPR_API CprResult cpr_condvar_init(CprCondVar *condvar);
+/// Returns false on failure; call cpr_get_error() to check the error code.
+CPR_API bool cpr_condvar_init(CprCondVar *condvar);
 CPR_API void cpr_condvar_destroy(CprCondVar *condvar);
 
 /// Releases `mutex` and blocks until signaled or broadcast.
 /// Reacquires `mutex` before returning.
 /// This can and will return spuriosly, *ALWAYS* recheck the condition.
-CPR_API CprResult cpr_condvar_wait(CprCondVar *condvar, CprMutex *mutex);
+/// Returns false on failure; call cpr_get_error() to check the error code.
+CPR_API bool cpr_condvar_wait(CprCondVar *condvar, CprMutex *mutex);
 
 /// Wakes one thread waiting on `condvar`. Safe to call with or without the mutex held.
-CPR_API CprResult cpr_condvar_signal(CprCondVar *condvar);
+/// Returns false on failure; call cpr_get_error() to check the error code.
+CPR_API bool cpr_condvar_signal(CprCondVar *condvar);
 
 /// Wakes all threads waiting on `condvar`. Safe to call with or without the mutex held.
-CPR_API CprResult cpr_condvar_broadcast(CprCondVar *condvar);
+/// Returns false on failure; call cpr_get_error() to check the error code.
+CPR_API bool cpr_condvar_broadcast(CprCondVar *condvar);
 
 #ifdef __cplusplus
 }
@@ -88,17 +96,24 @@ typedef struct {
 extern "C" {
 #endif
 
-CPR_API CprResult cpr_rwlock_init(CprRwLock *rwlock);
+/// Returns false on failure; call cpr_get_error() to check the error code.
+CPR_API bool cpr_rwlock_init(CprRwLock *rwlock);
 CPR_API void cpr_rwlock_destroy(CprRwLock *rwlock);
 
-CPR_API CprResult cpr_rwlock_lckread(CprRwLock *rwlock);
-/// Returns CPR_ERR_BUSY if the read lock cannot be acquired immediately.
-CPR_API CprResult cpr_rwlock_try_lckread(CprRwLock *rwlock);
-CPR_API CprResult cpr_rwlock_ulckread(CprRwLock *rwlock);
-CPR_API CprResult cpr_rwlock_lckwrite(CprRwLock *rwlock);
-/// Returns CPR_ERR_BUSY if the write lock cannot be acquired immediately.
-CPR_API CprResult cpr_rwlock_try_lckwrite(CprRwLock *rwlock);
-CPR_API CprResult cpr_rwlock_ulckwrite(CprRwLock *rwlock);
+/// Returns false on failure; call cpr_get_error() to check the error code.
+CPR_API bool cpr_rwlock_lckread(CprRwLock *rwlock);
+/// Returns false if the read lock cannot be acquired immediately; call cpr_get_error() for details.
+/// CPR_ERR_BUSY means the lock was exclusively held; other codes indicate an OS-level failure.
+CPR_API bool cpr_rwlock_try_lckread(CprRwLock *rwlock);
+/// Returns false on failure; call cpr_get_error() to check the error code.
+CPR_API bool cpr_rwlock_ulckread(CprRwLock *rwlock);
+/// Returns false on failure; call cpr_get_error() to check the error code.
+CPR_API bool cpr_rwlock_lckwrite(CprRwLock *rwlock);
+/// Returns false if the write lock cannot be acquired immediately; call cpr_get_error() for details.
+/// CPR_ERR_BUSY means the lock was already held; other codes indicate an OS-level failure.
+CPR_API bool cpr_rwlock_try_lckwrite(CprRwLock *rwlock);
+/// Returns false on failure; call cpr_get_error() to check the error code.
+CPR_API bool cpr_rwlock_ulckwrite(CprRwLock *rwlock);
 
 #ifdef __cplusplus
 }

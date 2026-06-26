@@ -51,6 +51,10 @@ target_link_libraries(copper PRIVATE Threads::Threads)
 if(UNIX OR APPLE)
         target_compile_definitions(copper PRIVATE _POSIX_C_SOURCE=200809L)
 endif()
+if(APPLE)
+        # Expose BSD extensions (st_mtimespec, d_type, etc.) alongside POSIX.
+        target_compile_definitions(copper PRIVATE _DARWIN_C_SOURCE)
+endif()
 
 target_compile_definitions(copper PUBLIC ${COPPER_PLATFORM_DEFS})
 

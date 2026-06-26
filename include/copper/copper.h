@@ -5,6 +5,7 @@
 #include <copper/arena.h>
 #include <copper/atomic.h>
 #include <copper/bytesize.h>
+#include <copper/fs.h>
 #include <copper/log.h>
 #include <copper/defs.h>
 #include <copper/result.h>

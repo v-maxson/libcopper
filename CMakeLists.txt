@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 project(copper
-        VERSION 0.3.0
+        VERSION 0.3.1
         DESCRIPTION "Cross-platform C99 utility library"
         LANGUAGES C)
 

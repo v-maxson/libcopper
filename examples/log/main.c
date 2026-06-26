@@ -82,10 +82,10 @@ int main(void)
 	CprFileSinkConfig file_cfg = { .path = "server.log",
 				       .open_mode = CPR_LOG_FILE_OVERWRITE,
 				       .roll_mode = CPR_LOG_ROLL_NONE };
-	CprResult file_result;
-	CprLogSink *file = cpr_log_file_sink(&file_cfg, &file_result);
+	CprLogSink *file = cpr_log_file_sink(&file_cfg);
 	if (!file) {
-		fprintf(stderr, "failed to open log file: %d\n", file_result);
+		fprintf(stderr, "failed to open log file: %d\n",
+			cpr_get_error().code);
 		return 1;
 	}
 	file->min_level = CPR_LOG_DEBUG;

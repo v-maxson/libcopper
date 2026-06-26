@@ -14,31 +14,33 @@ void tearDown(void)
 void test_init_buf_null_arena(void)
 {
 	static char buf[64];
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID,
-			      cpr_arena_init_buf(NULL, buf, sizeof(buf)));
+	cpr_clear_error();
+	TEST_ASSERT_FALSE(cpr_arena_init_buf(NULL, buf, sizeof(buf)));
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_get_error().code);
 }
 
 void test_init_buf_null_buf(void)
 {
 	CprArena arena;
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID,
-			      cpr_arena_init_buf(&arena, NULL, 64));
+	cpr_clear_error();
+	TEST_ASSERT_FALSE(cpr_arena_init_buf(&arena, NULL, 64));
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_get_error().code);
 }
 
 void test_init_buf_zero_size(void)
 {
 	CprArena arena;
 	static char buf[64];
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID,
-			      cpr_arena_init_buf(&arena, buf, 0));
+	cpr_clear_error();
+	TEST_ASSERT_FALSE(cpr_arena_init_buf(&arena, buf, 0));
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_get_error().code);
 }
 
 void test_init_buf_success(void)
 {
 	CprArena arena;
 	static char buf[64];
-	TEST_ASSERT_EQUAL_INT(CPR_OK,
-			      cpr_arena_init_buf(&arena, buf, sizeof(buf)));
+	TEST_ASSERT_TRUE(cpr_arena_init_buf(&arena, buf, sizeof(buf)));
 	TEST_ASSERT_EQUAL_PTR(buf, arena.buf);
 	TEST_ASSERT_EQUAL_size_t(sizeof(buf), arena.cap);
 	TEST_ASSERT_EQUAL_size_t(0, arena.offset);
@@ -46,24 +48,24 @@ void test_init_buf_success(void)
 
 void test_init_null_arena(void)
 {
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID,
-			      cpr_arena_init(NULL, cpr_arena_alloc_default(),
-					     64));
+	cpr_clear_error();
+	TEST_ASSERT_FALSE(cpr_arena_init(NULL, cpr_arena_alloc_default(), 64));
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_get_error().code);
 }
 
 void test_init_zero_capacity(void)
 {
 	CprArena arena;
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID,
-			      cpr_arena_init(&arena, cpr_arena_alloc_default(),
-					     0));
+	cpr_clear_error();
+	TEST_ASSERT_FALSE(cpr_arena_init(&arena, cpr_arena_alloc_default(), 0));
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_get_error().code);
 }
 
 void test_init_success(void)
 {
 	CprArena arena;
-	CprResult res = cpr_arena_init(&arena, cpr_arena_alloc_default(), 256);
-	TEST_ASSERT_EQUAL_INT(CPR_OK, res);
+	TEST_ASSERT_TRUE(
+		cpr_arena_init(&arena, cpr_arena_alloc_default(), 256));
 	TEST_ASSERT_NOT_NULL(arena.buf);
 	TEST_ASSERT_EQUAL_size_t(256, arena.cap);
 	cpr_arena_free(&arena);
@@ -246,8 +248,7 @@ void test_rewind_idempotent_after_second_call(void)
 void test_free_zeroes_arena(void)
 {
 	CprArena arena;
-	CprResult res = cpr_arena_init(&arena, cpr_arena_alloc_default(), 64);
-	TEST_ASSERT_EQUAL_INT(CPR_OK, res);
+	TEST_ASSERT_TRUE(cpr_arena_init(&arena, cpr_arena_alloc_default(), 64));
 
 	cpr_arena_free(&arena);
 	TEST_ASSERT_NULL(arena.buf);

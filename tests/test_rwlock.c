@@ -12,7 +12,9 @@ void tearDown(void)
 
 void test_init_null(void)
 {
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_rwlock_init(NULL));
+	cpr_clear_error();
+	TEST_ASSERT_FALSE(cpr_rwlock_init(NULL));
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_get_error().code);
 }
 
 void test_destroy_null(void)
@@ -22,32 +24,44 @@ void test_destroy_null(void)
 
 void test_lckread_null(void)
 {
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_rwlock_lckread(NULL));
+	cpr_clear_error();
+	TEST_ASSERT_FALSE(cpr_rwlock_lckread(NULL));
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_get_error().code);
 }
 
 void test_try_lckread_null(void)
 {
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_rwlock_try_lckread(NULL));
+	cpr_clear_error();
+	TEST_ASSERT_FALSE(cpr_rwlock_try_lckread(NULL));
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_get_error().code);
 }
 
 void test_ulckread_null(void)
 {
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_rwlock_ulckread(NULL));
+	cpr_clear_error();
+	TEST_ASSERT_FALSE(cpr_rwlock_ulckread(NULL));
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_get_error().code);
 }
 
 void test_lckwrite_null(void)
 {
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_rwlock_lckwrite(NULL));
+	cpr_clear_error();
+	TEST_ASSERT_FALSE(cpr_rwlock_lckwrite(NULL));
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_get_error().code);
 }
 
 void test_try_lckwrite_null(void)
 {
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_rwlock_try_lckwrite(NULL));
+	cpr_clear_error();
+	TEST_ASSERT_FALSE(cpr_rwlock_try_lckwrite(NULL));
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_get_error().code);
 }
 
 void test_ulckwrite_null(void)
 {
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_rwlock_ulckwrite(NULL));
+	cpr_clear_error();
+	TEST_ASSERT_FALSE(cpr_rwlock_ulckwrite(NULL));
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_get_error().code);
 }
 
 // --- Lifecycle ---
@@ -55,7 +69,7 @@ void test_ulckwrite_null(void)
 void test_init_succeeds(void)
 {
 	CprRwLock rw;
-	TEST_ASSERT_EQUAL_INT(CPR_OK, cpr_rwlock_init(&rw));
+	TEST_ASSERT_TRUE(cpr_rwlock_init(&rw));
 	cpr_rwlock_destroy(&rw);
 }
 
@@ -65,8 +79,8 @@ void test_single_reader(void)
 {
 	CprRwLock rw;
 	cpr_rwlock_init(&rw);
-	TEST_ASSERT_EQUAL_INT(CPR_OK, cpr_rwlock_lckread(&rw));
-	TEST_ASSERT_EQUAL_INT(CPR_OK, cpr_rwlock_ulckread(&rw));
+	TEST_ASSERT_TRUE(cpr_rwlock_lckread(&rw));
+	TEST_ASSERT_TRUE(cpr_rwlock_ulckread(&rw));
 	cpr_rwlock_destroy(&rw);
 }
 
@@ -74,8 +88,8 @@ void test_single_writer(void)
 {
 	CprRwLock rw;
 	cpr_rwlock_init(&rw);
-	TEST_ASSERT_EQUAL_INT(CPR_OK, cpr_rwlock_lckwrite(&rw));
-	TEST_ASSERT_EQUAL_INT(CPR_OK, cpr_rwlock_ulckwrite(&rw));
+	TEST_ASSERT_TRUE(cpr_rwlock_lckwrite(&rw));
+	TEST_ASSERT_TRUE(cpr_rwlock_ulckwrite(&rw));
 	cpr_rwlock_destroy(&rw);
 }
 
@@ -83,8 +97,8 @@ void test_try_lckread_succeeds(void)
 {
 	CprRwLock rw;
 	cpr_rwlock_init(&rw);
-	TEST_ASSERT_EQUAL_INT(CPR_OK, cpr_rwlock_try_lckread(&rw));
-	TEST_ASSERT_EQUAL_INT(CPR_OK, cpr_rwlock_ulckread(&rw));
+	TEST_ASSERT_TRUE(cpr_rwlock_try_lckread(&rw));
+	TEST_ASSERT_TRUE(cpr_rwlock_ulckread(&rw));
 	cpr_rwlock_destroy(&rw);
 }
 
@@ -92,8 +106,8 @@ void test_try_lckwrite_succeeds(void)
 {
 	CprRwLock rw;
 	cpr_rwlock_init(&rw);
-	TEST_ASSERT_EQUAL_INT(CPR_OK, cpr_rwlock_try_lckwrite(&rw));
-	TEST_ASSERT_EQUAL_INT(CPR_OK, cpr_rwlock_ulckwrite(&rw));
+	TEST_ASSERT_TRUE(cpr_rwlock_try_lckwrite(&rw));
+	TEST_ASSERT_TRUE(cpr_rwlock_ulckwrite(&rw));
 	cpr_rwlock_destroy(&rw);
 }
 
@@ -132,15 +146,13 @@ static void cpr__writer_counter_worker(void *arg)
 	WriterArgs *a = (WriterArgs *)arg;
 	int i;
 	for (i = 0; i < WRITER_INCREMENTS; i++) {
-		CprResult r = cpr_rwlock_lckwrite(a->rwlock);
-		if (cpr_err(r)) {
-			a->result = r;
+		if (!cpr_rwlock_lckwrite(a->rwlock)) {
+			a->result = cpr_get_error().code;
 			return;
 		}
 		(*a->counter)++;
-		r = cpr_rwlock_ulckwrite(a->rwlock);
-		if (cpr_err(r)) {
-			a->result = r;
+		if (!cpr_rwlock_ulckwrite(a->rwlock)) {
+			a->result = cpr_get_error().code;
 			return;
 		}
 	}
@@ -149,9 +161,10 @@ static void cpr__writer_counter_worker(void *arg)
 static void cpr__write_worker(void *arg)
 {
 	RwArgs *a = (RwArgs *)arg;
-	a->result = cpr_rwlock_lckwrite(a->rwlock);
-	if (cpr_err(a->result))
+	if (!cpr_rwlock_lckwrite(a->rwlock)) {
+		a->result = cpr_get_error().code;
 		return;
+	}
 	cpr_mutex_lock(a->coord);
 	*a->locked = 1;
 	cpr_condvar_signal(a->cv);
@@ -164,9 +177,10 @@ static void cpr__write_worker(void *arg)
 static void cpr__reader_worker(void *arg)
 {
 	ReaderArgs *a = (ReaderArgs *)arg;
-	a->result = cpr_rwlock_lckread(a->rwlock);
-	if (cpr_err(a->result))
+	if (!cpr_rwlock_lckread(a->rwlock)) {
+		a->result = cpr_get_error().code;
 		return;
+	}
 	cpr_mutex_lock(a->coord);
 	(*a->active)++;
 	cpr_condvar_broadcast(a->cv);
@@ -197,8 +211,7 @@ void test_concurrent_readers(void)
 		args[i].active = &active;
 		args[i].release = &release;
 		args[i].result = CPR_OK;
-		threads[i] =
-			cpr_thrd_create(cpr__reader_worker, &args[i], NULL);
+		threads[i] = cpr_thrd_create(cpr__reader_worker, &args[i]);
 	}
 
 	cpr_mutex_lock(&coord);
@@ -238,12 +251,14 @@ void test_writer_exclusive(void)
 	args.locked = &locked;
 	args.release = &release;
 	args.result = CPR_OK;
-	t = cpr_thrd_create(cpr__write_worker, &args, NULL);
+	t = cpr_thrd_create(cpr__write_worker, &args);
 
 	cpr_mutex_lock(&coord);
 	while (!locked)
 		cpr_condvar_wait(&cv, &coord);
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_BUSY, cpr_rwlock_try_lckread(&rw));
+	cpr_clear_error();
+	TEST_ASSERT_FALSE(cpr_rwlock_try_lckread(&rw));
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_BUSY, cpr_get_error().code);
 	release = 1;
 	cpr_condvar_signal(&cv);
 	cpr_mutex_unlock(&coord);
@@ -275,12 +290,14 @@ void test_try_lckwrite_busy(void)
 	args.active = &active;
 	args.release = &release;
 	args.result = CPR_OK;
-	t = cpr_thrd_create(cpr__reader_worker, &args, NULL);
+	t = cpr_thrd_create(cpr__reader_worker, &args);
 
 	cpr_mutex_lock(&coord);
 	while (!active)
 		cpr_condvar_wait(&cv, &coord);
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_BUSY, cpr_rwlock_try_lckwrite(&rw));
+	cpr_clear_error();
+	TEST_ASSERT_FALSE(cpr_rwlock_try_lckwrite(&rw));
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_BUSY, cpr_get_error().code);
 	release = 1;
 	cpr_condvar_broadcast(&cv);
 	cpr_mutex_unlock(&coord);
@@ -312,12 +329,14 @@ void test_write_then_read(void)
 	args.locked = &locked;
 	args.release = &release;
 	args.result = CPR_OK;
-	t = cpr_thrd_create(cpr__write_worker, &args, NULL);
+	t = cpr_thrd_create(cpr__write_worker, &args);
 
 	cpr_mutex_lock(&coord);
 	while (!locked)
 		cpr_condvar_wait(&cv, &coord);
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_BUSY, cpr_rwlock_try_lckread(&rw));
+	cpr_clear_error();
+	TEST_ASSERT_FALSE(cpr_rwlock_try_lckread(&rw));
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_BUSY, cpr_get_error().code);
 	release = 1;
 	cpr_condvar_signal(&cv);
 	cpr_mutex_unlock(&coord);
@@ -325,8 +344,8 @@ void test_write_then_read(void)
 	cpr_thrd_join(t);
 
 	TEST_ASSERT_EQUAL_INT(CPR_OK, args.result);
-	TEST_ASSERT_EQUAL_INT(CPR_OK, cpr_rwlock_lckread(&rw));
-	TEST_ASSERT_EQUAL_INT(CPR_OK, cpr_rwlock_ulckread(&rw));
+	TEST_ASSERT_TRUE(cpr_rwlock_lckread(&rw));
+	TEST_ASSERT_TRUE(cpr_rwlock_ulckread(&rw));
 
 	cpr_condvar_destroy(&cv);
 	cpr_mutex_destroy(&coord);
@@ -346,8 +365,8 @@ void test_write_contention_correctness(void)
 		args[i].rwlock = &rw;
 		args[i].counter = &counter;
 		args[i].result = CPR_OK;
-		threads[i] = cpr_thrd_create(cpr__writer_counter_worker,
-					     &args[i], NULL);
+		threads[i] =
+			cpr_thrd_create(cpr__writer_counter_worker, &args[i]);
 	}
 
 	for (i = 0; i < NWRITERS; i++)

@@ -13,11 +13,21 @@ void tearDown(void)
 
 void test_init_null(void)
 {
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_atomici32_init(NULL, 0));
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_atomicu32_init(NULL, 0));
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_atomici64_init(NULL, 0));
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_atomicu64_init(NULL, 0));
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_atomicptr_init(NULL, NULL));
+	cpr_clear_error();
+	TEST_ASSERT_FALSE(cpr_atomici32_init(NULL, 0));
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_get_error().code);
+	cpr_clear_error();
+	TEST_ASSERT_FALSE(cpr_atomicu32_init(NULL, 0));
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_get_error().code);
+	cpr_clear_error();
+	TEST_ASSERT_FALSE(cpr_atomici64_init(NULL, 0));
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_get_error().code);
+	cpr_clear_error();
+	TEST_ASSERT_FALSE(cpr_atomicu64_init(NULL, 0));
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_get_error().code);
+	cpr_clear_error();
+	TEST_ASSERT_FALSE(cpr_atomicptr_init(NULL, NULL));
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_get_error().code);
 }
 
 void test_destroy_null(void)
@@ -504,8 +514,7 @@ void test_i32_concurrent_increment(void)
 	cpr_atomici32_init(&counter, 0);
 	for (i = 0; i < NTHREADS; i++) {
 		args[i].counter = &counter;
-		threads[i] =
-			cpr_thrd_create(cpr__atomic_worker, &args[i], NULL);
+		threads[i] = cpr_thrd_create(cpr__atomic_worker, &args[i]);
 	}
 	for (i = 0; i < NTHREADS; i++)
 		cpr_thrd_join(threads[i]);

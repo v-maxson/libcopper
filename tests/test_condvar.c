@@ -12,14 +12,18 @@ void tearDown(void)
 
 void test_init_null(void)
 {
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_condvar_init(NULL));
+	cpr_clear_error();
+	TEST_ASSERT_FALSE(cpr_condvar_init(NULL));
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_get_error().code);
 }
 
 void test_wait_null_condvar(void)
 {
 	CprMutex m;
 	cpr_mutex_init(&m);
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_condvar_wait(NULL, &m));
+	cpr_clear_error();
+	TEST_ASSERT_FALSE(cpr_condvar_wait(NULL, &m));
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_get_error().code);
 	cpr_mutex_destroy(&m);
 }
 
@@ -27,18 +31,24 @@ void test_wait_null_mutex(void)
 {
 	CprCondVar cv;
 	cpr_condvar_init(&cv);
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_condvar_wait(&cv, NULL));
+	cpr_clear_error();
+	TEST_ASSERT_FALSE(cpr_condvar_wait(&cv, NULL));
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_get_error().code);
 	cpr_condvar_destroy(&cv);
 }
 
 void test_signal_null(void)
 {
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_condvar_signal(NULL));
+	cpr_clear_error();
+	TEST_ASSERT_FALSE(cpr_condvar_signal(NULL));
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_get_error().code);
 }
 
 void test_broadcast_null(void)
 {
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_condvar_broadcast(NULL));
+	cpr_clear_error();
+	TEST_ASSERT_FALSE(cpr_condvar_broadcast(NULL));
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_get_error().code);
 }
 
 void test_destroy_null(void)
@@ -51,7 +61,7 @@ void test_destroy_null(void)
 void test_init_succeeds(void)
 {
 	CprCondVar cv;
-	TEST_ASSERT_EQUAL_INT(CPR_OK, cpr_condvar_init(&cv));
+	TEST_ASSERT_TRUE(cpr_condvar_init(&cv));
 	cpr_condvar_destroy(&cv);
 }
 
@@ -72,8 +82,12 @@ static void cpr__wait_worker(void *arg)
 	WaitArgs *a = (WaitArgs *)arg;
 	cpr_mutex_lock(a->mutex);
 	(*a->waiting)++;
-	while (!*a->ready)
-		a->result = cpr_condvar_wait(a->cv, a->mutex);
+	while (!*a->ready) {
+		if (!cpr_condvar_wait(a->cv, a->mutex)) {
+			a->result = cpr_get_error().code;
+			break;
+		}
+	}
 	cpr_mutex_unlock(a->mutex);
 }
 
@@ -103,7 +117,7 @@ void test_signal_wakes_waiter(void)
 	args.ready = &ready;
 	args.waiting = &waiting;
 	args.result = CPR_OK;
-	t = cpr_thrd_create(cpr__wait_worker, &args, NULL);
+	t = cpr_thrd_create(cpr__wait_worker, &args);
 
 	cpr__spin_until_waiting(&m, &waiting, 1);
 	ready = 1;
@@ -135,7 +149,7 @@ void test_broadcast_wakes_all(void)
 		args[i].ready = &ready;
 		args[i].waiting = &waiting;
 		args[i].result = CPR_OK;
-		threads[i] = cpr_thrd_create(cpr__wait_worker, &args[i], NULL);
+		threads[i] = cpr_thrd_create(cpr__wait_worker, &args[i]);
 	}
 
 	cpr__spin_until_waiting(&m, &waiting, NWAITERS);

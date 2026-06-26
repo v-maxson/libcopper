@@ -12,20 +12,24 @@ void tearDown(void)
 
 void test_create_null_fn(void)
 {
-	CprResult r = CPR_OK;
-	CprThread *t = cpr_thrd_create(NULL, NULL, &r);
+	cpr_clear_error();
+	CprThread *t = cpr_thrd_create(NULL, NULL);
 	TEST_ASSERT_NULL(t);
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, r);
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_get_error().code);
 }
 
 void test_join_null(void)
 {
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_thrd_join(NULL));
+	cpr_clear_error();
+	TEST_ASSERT_FALSE(cpr_thrd_join(NULL));
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_get_error().code);
 }
 
 void test_detach_null(void)
 {
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_thrd_detach(NULL));
+	cpr_clear_error();
+	TEST_ASSERT_FALSE(cpr_thrd_detach(NULL));
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_get_error().code);
 }
 
 void test_get_id_null(void)
@@ -49,11 +53,9 @@ static void noop_worker(void *arg)
 
 void test_create_join(void)
 {
-	CprResult r = CPR_ERR_INVALID;
-	CprThread *t = cpr_thrd_create(noop_worker, NULL, &r);
+	CprThread *t = cpr_thrd_create(noop_worker, NULL);
 	TEST_ASSERT_NOT_NULL(t);
-	TEST_ASSERT_EQUAL_INT(CPR_OK, r);
-	TEST_ASSERT_EQUAL_INT(CPR_OK, cpr_thrd_join(t));
+	TEST_ASSERT_TRUE(cpr_thrd_join(t));
 }
 
 static void flag_worker(void *arg)
@@ -65,7 +67,7 @@ static void flag_worker(void *arg)
 void test_thread_runs(void)
 {
 	int flag = 0;
-	CprThread *t = cpr_thrd_create(flag_worker, &flag, NULL);
+	CprThread *t = cpr_thrd_create(flag_worker, &flag);
 	cpr_thrd_join(t);
 	TEST_ASSERT_EQUAL_INT(1, flag);
 }
@@ -85,7 +87,7 @@ static void id_worker(void *arg)
 void test_id_matches_current(void)
 {
 	IdArgs args = { 0 };
-	CprThread *t = cpr_thrd_create(id_worker, &args, NULL);
+	CprThread *t = cpr_thrd_create(id_worker, &args);
 	CprThreadId id = cpr_thrd_get_id(t);
 	cpr_thrd_join(t);
 	TEST_ASSERT_EQUAL_UINT64(id, args.self_id);
@@ -100,8 +102,8 @@ static void id_store_worker(void *arg)
 void test_distinct_ids(void)
 {
 	CprThreadId id1 = 0, id2 = 0;
-	CprThread *t1 = cpr_thrd_create(id_store_worker, &id1, NULL);
-	CprThread *t2 = cpr_thrd_create(id_store_worker, &id2, NULL);
+	CprThread *t1 = cpr_thrd_create(id_store_worker, &id1);
+	CprThread *t2 = cpr_thrd_create(id_store_worker, &id2);
 	cpr_thrd_join(t1);
 	cpr_thrd_join(t2);
 	TEST_ASSERT_NOT_EQUAL(id1, id2);
@@ -128,9 +130,9 @@ void test_yield(void)
 
 void test_detach(void)
 {
-	CprThread *t = cpr_thrd_create(noop_worker, NULL, NULL);
+	CprThread *t = cpr_thrd_create(noop_worker, NULL);
 	TEST_ASSERT_NOT_NULL(t);
-	TEST_ASSERT_EQUAL_INT(CPR_OK, cpr_thrd_detach(t));
+	TEST_ASSERT_TRUE(cpr_thrd_detach(t));
 }
 
 // --- TLS ---
@@ -142,7 +144,9 @@ void test_tls_destroy_null(void)
 
 void test_tls_set_null(void)
 {
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_tls_set(NULL, NULL));
+	cpr_clear_error();
+	TEST_ASSERT_FALSE(cpr_tls_set(NULL, NULL));
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_get_error().code);
 }
 
 void test_tls_get_null(void)
@@ -152,18 +156,16 @@ void test_tls_get_null(void)
 
 void test_tls_create_destroy(void)
 {
-	CprResult r = CPR_ERR_INVALID;
-	CprTls *tls = cpr_tls_create(NULL, &r);
+	CprTls *tls = cpr_tls_create(NULL);
 	TEST_ASSERT_NOT_NULL(tls);
-	TEST_ASSERT_EQUAL_INT(CPR_OK, r);
 	cpr_tls_destroy(tls);
 }
 
 void test_tls_set_get(void)
 {
 	int x = 42;
-	CprTls *tls = cpr_tls_create(NULL, NULL);
-	TEST_ASSERT_EQUAL_INT(CPR_OK, cpr_tls_set(tls, &x));
+	CprTls *tls = cpr_tls_create(NULL);
+	TEST_ASSERT_TRUE(cpr_tls_set(tls, &x));
 	TEST_ASSERT_EQUAL_PTR(&x, cpr_tls_get(tls));
 	cpr_tls_destroy(tls);
 }
@@ -185,7 +187,7 @@ void test_tls_per_thread(void)
 {
 	int x = 1, y = 2;
 	TlsArgs a1, a2;
-	CprTls *tls = cpr_tls_create(NULL, NULL);
+	CprTls *tls = cpr_tls_create(NULL);
 	CprThread *t1, *t2;
 
 	a1.tls = tls;
@@ -195,8 +197,8 @@ void test_tls_per_thread(void)
 	a2.value = &y;
 	a2.got = NULL;
 
-	t1 = cpr_thrd_create(tls_rw_worker, &a1, NULL);
-	t2 = cpr_thrd_create(tls_rw_worker, &a2, NULL);
+	t1 = cpr_thrd_create(tls_rw_worker, &a1);
+	t2 = cpr_thrd_create(tls_rw_worker, &a2);
 	cpr_thrd_join(t1);
 	cpr_thrd_join(t2);
 
@@ -226,8 +228,8 @@ void test_tls_destructor_called(void)
 	CprThread *t;
 
 	tls_destructor_count = 0;
-	tls = cpr_tls_create(tls_destructor, NULL);
-	t = cpr_thrd_create(tls_destructor_worker, tls, NULL);
+	tls = cpr_tls_create(tls_destructor);
+	t = cpr_thrd_create(tls_destructor_worker, tls);
 	cpr_thrd_join(t);
 	cpr_tls_destroy(tls);
 

@@ -280,13 +280,17 @@ void test_destroy_null(void)
 void test_add_sink_null_logger(void)
 {
 	CountSink s = make_count_sink();
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_log_add_sink(NULL, &s.base));
+	cpr_clear_error();
+	TEST_ASSERT_FALSE(cpr_log_add_sink(NULL, &s.base));
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_get_error().code);
 }
 
 void test_add_sink_null_sink(void)
 {
 	CprLogger *l = cpr_log_create(NULL);
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_log_add_sink(l, NULL));
+	cpr_clear_error();
+	TEST_ASSERT_FALSE(cpr_log_add_sink(l, NULL));
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_get_error().code);
 	cpr_log_destroy(l);
 }
 
@@ -364,7 +368,7 @@ void test_add_remove_sink(void)
 	CprLogger *l = cpr_log_create(NULL);
 	CountSink s = make_count_sink();
 
-	TEST_ASSERT_EQUAL_INT(CPR_OK, cpr_log_add_sink(l, &s.base));
+	TEST_ASSERT_TRUE(cpr_log_add_sink(l, &s.base));
 	cpr_log_info(l, "a");
 	TEST_ASSERT_EQUAL_INT(1, s.count);
 
@@ -382,13 +386,13 @@ void test_add_max_sinks(void)
 
 	for (int i = 0; i < CPR_LOG_MAX_SINKS; i++) {
 		sinks[i] = make_count_sink();
-		TEST_ASSERT_EQUAL_INT(CPR_OK,
-				      cpr_log_add_sink(l, &sinks[i].base));
+		TEST_ASSERT_TRUE(cpr_log_add_sink(l, &sinks[i].base));
 	}
 
 	CountSink extra = make_count_sink();
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_EXHAUSTED,
-			      cpr_log_add_sink(l, &extra.base));
+	cpr_clear_error();
+	TEST_ASSERT_FALSE(cpr_log_add_sink(l, &extra.base));
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_EXHAUSTED, cpr_get_error().code);
 
 	cpr_log_destroy(l);
 }
@@ -591,27 +595,27 @@ void test_console_sink_null_config(void)
 
 void test_file_sink_null_config(void)
 {
-	CprResult r = CPR_OK;
-	TEST_ASSERT_NULL(cpr_log_file_sink(NULL, &r));
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, r);
+	cpr_clear_error();
+	TEST_ASSERT_NULL(cpr_log_file_sink(NULL));
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_get_error().code);
 }
 
 void test_file_sink_null_path(void)
 {
 	CprFileSinkConfig cfg = { NULL, CPR_LOG_FILE_APPEND, CPR_LOG_ROLL_NONE,
 				  0, 0 };
-	CprResult r = CPR_OK;
-	TEST_ASSERT_NULL(cpr_log_file_sink(&cfg, &r));
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, r);
+	cpr_clear_error();
+	TEST_ASSERT_NULL(cpr_log_file_sink(&cfg));
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_get_error().code);
 }
 
 void test_file_sink_bad_path(void)
 {
 	CprFileSinkConfig cfg = { "/no/such/dir/foo.log", CPR_LOG_FILE_APPEND,
 				  CPR_LOG_ROLL_NONE, 0, 0 };
-	CprResult r = CPR_OK;
-	TEST_ASSERT_NULL(cpr_log_file_sink(&cfg, &r));
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_IO, r);
+	cpr_clear_error();
+	TEST_ASSERT_NULL(cpr_log_file_sink(&cfg));
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_IO, cpr_get_error().code);
 }
 
 void test_file_sink_writes_content(void)
@@ -620,9 +624,7 @@ void test_file_sink_writes_content(void)
 
 	CprFileSinkConfig cfg = { TEST_LOG_PATH, CPR_LOG_FILE_OVERWRITE,
 				  CPR_LOG_ROLL_NONE, 0, 0 };
-	CprResult r = CPR_ERR_INVALID;
-	CprLogSink *sink = cpr_log_file_sink(&cfg, &r);
-	TEST_ASSERT_EQUAL_INT(CPR_OK, r);
+	CprLogSink *sink = cpr_log_file_sink(&cfg);
 	TEST_ASSERT_NOT_NULL(sink);
 
 	CprLogger *l = cpr_log_create(NULL);
@@ -633,8 +635,8 @@ void test_file_sink_writes_content(void)
 	cpr_log_sink_destroy(sink);
 
 	char buf[512] = { 0 };
-	TEST_ASSERT_EQUAL_INT(CPR_OK,
-			      cpr_read_file_all(TEST_LOG_PATH, buf, sizeof buf - 1, NULL));
+	TEST_ASSERT_TRUE(
+		cpr_read_file_all(TEST_LOG_PATH, buf, sizeof buf - 1, NULL));
 	cpr_remove_file(TEST_LOG_PATH);
 
 	TEST_ASSERT_NOT_NULL(strstr(buf, "written to file"));
@@ -647,7 +649,7 @@ void test_file_sink_overwrite_clears_file(void)
 	// First pass: write a unique marker.
 	CprFileSinkConfig cfg = { TEST_LOG_PATH, CPR_LOG_FILE_OVERWRITE,
 				  CPR_LOG_ROLL_NONE, 0, 0 };
-	CprLogSink *sink = cpr_log_file_sink(&cfg, NULL);
+	CprLogSink *sink = cpr_log_file_sink(&cfg);
 	CprLogger *l = cpr_log_create(NULL);
 	cpr_log_add_sink(l, sink);
 	cpr_log_info(l, "first pass");
@@ -656,7 +658,7 @@ void test_file_sink_overwrite_clears_file(void)
 	cpr_log_sink_destroy(sink);
 
 	// Second pass: overwrite mode must not see "first pass".
-	sink = cpr_log_file_sink(&cfg, NULL);
+	sink = cpr_log_file_sink(&cfg);
 	l = cpr_log_create(NULL);
 	cpr_log_add_sink(l, sink);
 	cpr_log_info(l, "second pass");
@@ -665,8 +667,8 @@ void test_file_sink_overwrite_clears_file(void)
 	cpr_log_sink_destroy(sink);
 
 	char buf[512] = { 0 };
-	TEST_ASSERT_EQUAL_INT(CPR_OK,
-			      cpr_read_file_all(TEST_LOG_PATH, buf, sizeof buf - 1, NULL));
+	TEST_ASSERT_TRUE(
+		cpr_read_file_all(TEST_LOG_PATH, buf, sizeof buf - 1, NULL));
 	cpr_remove_file(TEST_LOG_PATH);
 
 	TEST_ASSERT_NULL(strstr(buf, "first pass"));
@@ -680,7 +682,7 @@ void test_file_sink_append_preserves_content(void)
 	CprFileSinkConfig cfg = { TEST_LOG_PATH, CPR_LOG_FILE_APPEND,
 				  CPR_LOG_ROLL_NONE, 0, 0 };
 
-	CprLogSink *sink = cpr_log_file_sink(&cfg, NULL);
+	CprLogSink *sink = cpr_log_file_sink(&cfg);
 	CprLogger *l = cpr_log_create(NULL);
 	cpr_log_add_sink(l, sink);
 	cpr_log_info(l, "first");
@@ -688,7 +690,7 @@ void test_file_sink_append_preserves_content(void)
 	cpr_log_destroy(l);
 	cpr_log_sink_destroy(sink);
 
-	sink = cpr_log_file_sink(&cfg, NULL);
+	sink = cpr_log_file_sink(&cfg);
 	l = cpr_log_create(NULL);
 	cpr_log_add_sink(l, sink);
 	cpr_log_info(l, "second");
@@ -697,8 +699,8 @@ void test_file_sink_append_preserves_content(void)
 	cpr_log_sink_destroy(sink);
 
 	char buf[512] = { 0 };
-	TEST_ASSERT_EQUAL_INT(CPR_OK,
-			      cpr_read_file_all(TEST_LOG_PATH, buf, sizeof buf - 1, NULL));
+	TEST_ASSERT_TRUE(
+		cpr_read_file_all(TEST_LOG_PATH, buf, sizeof buf - 1, NULL));
 	cpr_remove_file(TEST_LOG_PATH);
 
 	TEST_ASSERT_NOT_NULL(strstr(buf, "first"));
@@ -871,7 +873,7 @@ void test_thread_safe_concurrent_writes(void)
 	CprThread *threads[LOG_THREAD_COUNT];
 
 	for (int i = 0; i < LOG_THREAD_COUNT; i++)
-		threads[i] = cpr_thrd_create(write_worker, &args, NULL);
+		threads[i] = cpr_thrd_create(write_worker, &args);
 
 	for (int i = 0; i < LOG_THREAD_COUNT; i++)
 		cpr_thrd_join(threads[i]);

@@ -12,22 +12,30 @@ void tearDown(void)
 
 void test_init_null(void)
 {
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_mutex_init(NULL));
+	cpr_clear_error();
+	TEST_ASSERT_FALSE(cpr_mutex_init(NULL));
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_get_error().code);
 }
 
 void test_lock_null(void)
 {
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_mutex_lock(NULL));
+	cpr_clear_error();
+	TEST_ASSERT_FALSE(cpr_mutex_lock(NULL));
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_get_error().code);
 }
 
 void test_trylock_null(void)
 {
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_mutex_trylock(NULL));
+	cpr_clear_error();
+	TEST_ASSERT_FALSE(cpr_mutex_trylock(NULL));
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_get_error().code);
 }
 
 void test_unlock_null(void)
 {
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_mutex_unlock(NULL));
+	cpr_clear_error();
+	TEST_ASSERT_FALSE(cpr_mutex_unlock(NULL));
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_get_error().code);
 }
 
 void test_destroy_null(void)
@@ -40,7 +48,7 @@ void test_destroy_null(void)
 void test_init_succeeds(void)
 {
 	CprMutex m;
-	TEST_ASSERT_EQUAL_INT(CPR_OK, cpr_mutex_init(&m));
+	TEST_ASSERT_TRUE(cpr_mutex_init(&m));
 	cpr_mutex_destroy(&m);
 }
 
@@ -48,8 +56,8 @@ void test_lock_unlock(void)
 {
 	CprMutex m;
 	cpr_mutex_init(&m);
-	TEST_ASSERT_EQUAL_INT(CPR_OK, cpr_mutex_lock(&m));
-	TEST_ASSERT_EQUAL_INT(CPR_OK, cpr_mutex_unlock(&m));
+	TEST_ASSERT_TRUE(cpr_mutex_lock(&m));
+	TEST_ASSERT_TRUE(cpr_mutex_unlock(&m));
 	cpr_mutex_destroy(&m);
 }
 
@@ -57,7 +65,7 @@ void test_trylock_succeeds_when_unlocked(void)
 {
 	CprMutex m;
 	cpr_mutex_init(&m);
-	TEST_ASSERT_EQUAL_INT(CPR_OK, cpr_mutex_trylock(&m));
+	TEST_ASSERT_TRUE(cpr_mutex_trylock(&m));
 	cpr_mutex_unlock(&m);
 	cpr_mutex_destroy(&m);
 }
@@ -68,8 +76,8 @@ void test_repeated_lock_unlock_cycles(void)
 	int i;
 	cpr_mutex_init(&m);
 	for (i = 0; i < 16; i++) {
-		TEST_ASSERT_EQUAL_INT(CPR_OK, cpr_mutex_lock(&m));
-		TEST_ASSERT_EQUAL_INT(CPR_OK, cpr_mutex_unlock(&m));
+		TEST_ASSERT_TRUE(cpr_mutex_lock(&m));
+		TEST_ASSERT_TRUE(cpr_mutex_unlock(&m));
 	}
 	cpr_mutex_destroy(&m);
 }
@@ -93,8 +101,9 @@ typedef struct {
 static void cpr__trylock_worker(void *arg)
 {
 	TrylockArgs *a = (TrylockArgs *)arg;
-	a->result = cpr_mutex_trylock(a->mutex);
-	if (a->result == CPR_OK)
+	bool locked = cpr_mutex_trylock(a->mutex);
+	a->result = locked ? CPR_OK : cpr_get_error().code;
+	if (locked)
 		cpr_mutex_unlock(a->mutex);
 }
 
@@ -103,15 +112,13 @@ static void cpr__counter_worker(void *arg)
 	CounterArgs *a = (CounterArgs *)arg;
 	int i;
 	for (i = 0; i < INCREMENTS; i++) {
-		CprResult r = cpr_mutex_lock(a->mutex);
-		if (cpr_err(r)) {
-			a->result = r;
+		if (!cpr_mutex_lock(a->mutex)) {
+			a->result = cpr_get_error().code;
 			return;
 		}
 		(*a->counter)++;
-		r = cpr_mutex_unlock(a->mutex);
-		if (cpr_err(r)) {
-			a->result = r;
+		if (!cpr_mutex_unlock(a->mutex)) {
+			a->result = cpr_get_error().code;
 			return;
 		}
 	}
@@ -128,7 +135,7 @@ void test_trylock_busy_when_held(void)
 
 	args.mutex = &m;
 	args.result = CPR_OK;
-	t = cpr_thrd_create(cpr__trylock_worker, &args, NULL);
+	t = cpr_thrd_create(cpr__trylock_worker, &args);
 	cpr_thrd_join(t);
 
 	TEST_ASSERT_EQUAL_INT(CPR_ERR_BUSY, args.result);
@@ -149,8 +156,7 @@ void test_contention_correctness(void)
 		args[i].mutex = &m;
 		args[i].counter = &counter;
 		args[i].result = CPR_OK;
-		threads[i] =
-			cpr_thrd_create(cpr__counter_worker, &args[i], NULL);
+		threads[i] = cpr_thrd_create(cpr__counter_worker, &args[i]);
 	}
 
 	for (i = 0; i < NTHREADS; i++)

@@ -18,6 +18,8 @@ A lightweight, cross-platform utility library for C99.
 
 - **Threading** - Create and manage threads, sleep, yield, and store per-thread data with thread-local storage. Includes synchronization primitives (mutex, condition variable, read-write lock) for coordinating access to shared data.
 
+- **File System** - Create, move, copy, and delete files and directories, including recursive operations. Includes file I/O with read/write/seek support, directory iteration, and path utilities for joining, normalizing, and inspecting paths.
+
 - **Logger** - A multi-sink logger with six log levels. Supports writing to the console, a file (with log rotation), or a custom callback. Includes optional thread-safety and shorthand macros like `cpr_info(...)` for quick use without managing a logger instance.
 
 - **Time/Clock Functions** - Macros for converting between time units (nanoseconds through hours) and for writing readable durations like `cpr_s(30)`. Also provides functions to get the current UTC time, a monotonic clock for measuring elapsed time, and date/time conversions for local and UTC wall-clock time.
@@ -52,7 +54,6 @@ It's probably **not** what you want if:
 
 ## Coming Soon
 
-- Filesystem
 - Dynamic array type
 - Base64 encoding
 - CLI argument parsing

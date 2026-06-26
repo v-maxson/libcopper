@@ -811,7 +811,8 @@ CprDirIterator *cpr_open_dir(const char *path, CprResult *out_result)
 			return NULL;
 		}
 		wchar_t wpattern[CPR_FS_PATH_MAX + 4];
-		_snwprintf(wpattern, CPR_FS_PATH_MAX + 3, L"%s\\*", wpath);
+		_snwprintf_s(wpattern, CPR_FS_PATH_MAX + 4, _TRUNCATE,
+			     L"%s\\*", wpath);
 		iter->handle = FindFirstFileW(wpattern, &iter->data);
 		if (iter->handle == INVALID_HANDLE_VALUE) {
 			free(iter);

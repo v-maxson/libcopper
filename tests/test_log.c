@@ -1,6 +1,5 @@
 #include "unity.h"
 #include <copper/copper.h>
-#include <stdio.h>
 #include <string.h>
 
 void setUp(void)
@@ -616,7 +615,7 @@ void test_file_sink_bad_path(void)
 
 void test_file_sink_writes_content(void)
 {
-	remove(TEST_LOG_PATH);
+	cpr_remove_file(TEST_LOG_PATH);
 
 	CprFileSinkConfig cfg = { TEST_LOG_PATH, CPR_LOG_FILE_OVERWRITE,
 				  CPR_LOG_ROLL_NONE, 0, 0 };
@@ -632,20 +631,17 @@ void test_file_sink_writes_content(void)
 	cpr_log_destroy(l);
 	cpr_log_sink_destroy(sink);
 
-	FILE *fp = fopen(TEST_LOG_PATH, "r");
-	TEST_ASSERT_NOT_NULL(fp);
 	char buf[512] = { 0 };
-	size_t nread = fread(buf, 1, sizeof buf - 1, fp);
-	(void)nread;
-	fclose(fp);
-	remove(TEST_LOG_PATH);
+	TEST_ASSERT_EQUAL_INT(CPR_OK,
+			      cpr_read_file_all(TEST_LOG_PATH, buf, sizeof buf - 1, NULL));
+	cpr_remove_file(TEST_LOG_PATH);
 
 	TEST_ASSERT_NOT_NULL(strstr(buf, "written to file"));
 }
 
 void test_file_sink_overwrite_clears_file(void)
 {
-	remove(TEST_LOG_PATH);
+	cpr_remove_file(TEST_LOG_PATH);
 
 	/* First pass: write a unique marker. */
 	CprFileSinkConfig cfg = { TEST_LOG_PATH, CPR_LOG_FILE_OVERWRITE,
@@ -667,13 +663,10 @@ void test_file_sink_overwrite_clears_file(void)
 	cpr_log_destroy(l);
 	cpr_log_sink_destroy(sink);
 
-	FILE *fp = fopen(TEST_LOG_PATH, "r");
-	TEST_ASSERT_NOT_NULL(fp);
 	char buf[512] = { 0 };
-	size_t nread = fread(buf, 1, sizeof buf - 1, fp);
-	(void)nread;
-	fclose(fp);
-	remove(TEST_LOG_PATH);
+	TEST_ASSERT_EQUAL_INT(CPR_OK,
+			      cpr_read_file_all(TEST_LOG_PATH, buf, sizeof buf - 1, NULL));
+	cpr_remove_file(TEST_LOG_PATH);
 
 	TEST_ASSERT_NULL(strstr(buf, "first pass"));
 	TEST_ASSERT_NOT_NULL(strstr(buf, "second pass"));
@@ -681,7 +674,7 @@ void test_file_sink_overwrite_clears_file(void)
 
 void test_file_sink_append_preserves_content(void)
 {
-	remove(TEST_LOG_PATH);
+	cpr_remove_file(TEST_LOG_PATH);
 
 	CprFileSinkConfig cfg = { TEST_LOG_PATH, CPR_LOG_FILE_APPEND,
 				  CPR_LOG_ROLL_NONE, 0, 0 };
@@ -702,13 +695,10 @@ void test_file_sink_append_preserves_content(void)
 	cpr_log_destroy(l);
 	cpr_log_sink_destroy(sink);
 
-	FILE *fp = fopen(TEST_LOG_PATH, "r");
-	TEST_ASSERT_NOT_NULL(fp);
 	char buf[512] = { 0 };
-	size_t nread = fread(buf, 1, sizeof buf - 1, fp);
-	(void)nread;
-	fclose(fp);
-	remove(TEST_LOG_PATH);
+	TEST_ASSERT_EQUAL_INT(CPR_OK,
+			      cpr_read_file_all(TEST_LOG_PATH, buf, sizeof buf - 1, NULL));
+	cpr_remove_file(TEST_LOG_PATH);
 
 	TEST_ASSERT_NOT_NULL(strstr(buf, "first"));
 	TEST_ASSERT_NOT_NULL(strstr(buf, "second"));

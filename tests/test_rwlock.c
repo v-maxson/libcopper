@@ -17,7 +17,7 @@ void test_init_null(void)
 
 void test_destroy_null(void)
 {
-	cpr_rwlock_destroy(NULL); /* must not crash */
+	cpr_rwlock_destroy(NULL); // must not crash
 }
 
 void test_lckread_null(void)

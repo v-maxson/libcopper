@@ -32,7 +32,7 @@ void test_unlock_null(void)
 
 void test_destroy_null(void)
 {
-	cpr_mutex_destroy(NULL); /* must not crash */
+	cpr_mutex_destroy(NULL); // must not crash
 }
 
 // --- Lifecycle ---

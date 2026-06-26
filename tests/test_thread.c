@@ -111,17 +111,17 @@ void test_distinct_ids(void)
 
 void test_sleep_zero(void)
 {
-	cpr_thrd_sleep(0); /* must not crash */
+	cpr_thrd_sleep(0); // must not crash
 }
 
 void test_sleep_nonzero(void)
 {
-	cpr_thrd_sleep(1); /* must not crash */
+	cpr_thrd_sleep(1); // must not crash
 }
 
 void test_yield(void)
 {
-	cpr_thrd_yield(); /* must not crash */
+	cpr_thrd_yield(); // must not crash
 }
 
 // --- Detach ---
@@ -137,7 +137,7 @@ void test_detach(void)
 
 void test_tls_destroy_null(void)
 {
-	cpr_tls_destroy(NULL); /* must not crash */
+	cpr_tls_destroy(NULL); // must not crash
 }
 
 void test_tls_set_null(void)

@@ -43,7 +43,7 @@ void test_broadcast_null(void)
 
 void test_destroy_null(void)
 {
-	cpr_condvar_destroy(NULL); /* must not crash */
+	cpr_condvar_destroy(NULL); // must not crash
 }
 
 // --- Lifecycle ---
@@ -82,7 +82,7 @@ static void cpr__spin_until_waiting(CprMutex *m, int *waiting, int target)
 	do {
 		cpr_mutex_lock(m);
 		if (*waiting == target)
-			return; /* returns holding the lock */
+			return; // returns holding the lock
 		cpr_mutex_unlock(m);
 	} while (1);
 }

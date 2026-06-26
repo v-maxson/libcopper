@@ -22,7 +22,7 @@ void test_init_null(void)
 
 void test_destroy_null(void)
 {
-	cpr_atomici32_destroy(NULL); /* must not crash */
+	cpr_atomici32_destroy(NULL); // must not crash
 	cpr_atomicu32_destroy(NULL);
 	cpr_atomici64_destroy(NULL);
 	cpr_atomicu64_destroy(NULL);
@@ -75,8 +75,8 @@ void test_i32_compare_exchange_failure(void)
 	int32_t expected = 0;
 	cpr_atomici32_init(&a, 5);
 	TEST_ASSERT_FALSE(cpr_atomici32_compare_exchange(&a, &expected, 99));
-	TEST_ASSERT_EQUAL_INT32(5, expected); /* updated to actual */
-	TEST_ASSERT_EQUAL_INT32(5, cpr_atomici32_load(&a)); /* unchanged */
+	TEST_ASSERT_EQUAL_INT32(5, expected); // updated to actual
+	TEST_ASSERT_EQUAL_INT32(5, cpr_atomici32_load(&a)); // unchanged
 	cpr_atomici32_destroy(&a);
 }
 
@@ -472,8 +472,8 @@ void test_ptr_compare_exchange_failure(void)
 	void *expected = &z;
 	cpr_atomicptr_init(&a, &x);
 	TEST_ASSERT_FALSE(cpr_atomicptr_compare_exchange(&a, &expected, &y));
-	TEST_ASSERT_EQUAL_PTR(&x, expected); /* updated to actual */
-	TEST_ASSERT_EQUAL_PTR(&x, cpr_atomicptr_load(&a)); /* unchanged */
+	TEST_ASSERT_EQUAL_PTR(&x, expected); // updated to actual
+	TEST_ASSERT_EQUAL_PTR(&x, cpr_atomicptr_load(&a)); // unchanged
 	cpr_atomicptr_destroy(&a);
 }
 

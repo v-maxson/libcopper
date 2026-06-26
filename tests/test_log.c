@@ -397,7 +397,8 @@ void test_remove_nonexistent_sink(void)
 {
 	CprLogger *l = cpr_log_create(NULL);
 	CountSink s = make_count_sink();
-	cpr_log_remove_sink(l, &s.base); /* never added — must not crash */
+	// never added — must not crash
+	cpr_log_remove_sink(l, &s.base);
 	cpr_log_destroy(l);
 }
 
@@ -643,7 +644,7 @@ void test_file_sink_overwrite_clears_file(void)
 {
 	cpr_remove_file(TEST_LOG_PATH);
 
-	/* First pass: write a unique marker. */
+	// First pass: write a unique marker.
 	CprFileSinkConfig cfg = { TEST_LOG_PATH, CPR_LOG_FILE_OVERWRITE,
 				  CPR_LOG_ROLL_NONE, 0, 0 };
 	CprLogSink *sink = cpr_log_file_sink(&cfg, NULL);
@@ -654,7 +655,7 @@ void test_file_sink_overwrite_clears_file(void)
 	cpr_log_destroy(l);
 	cpr_log_sink_destroy(sink);
 
-	/* Second pass: overwrite mode must not see "first pass". */
+	// Second pass: overwrite mode must not see "first pass".
 	sink = cpr_log_file_sink(&cfg, NULL);
 	l = cpr_log_create(NULL);
 	cpr_log_add_sink(l, sink);
@@ -777,7 +778,7 @@ void test_message_truncation(void)
 	cpr_log_info(l, "%s", long_msg);
 
 	TEST_ASSERT_EQUAL_INT(1, cap.count);
-	/* the truncation marker must appear in the captured formatted output */
+	// the truncation marker must appear in the captured formatted output
 	TEST_ASSERT_NOT_NULL(strstr(cap.entries[0].buf, "[truncated]"));
 
 	cpr_log_destroy(l);
@@ -814,11 +815,11 @@ void test_dedup_sink(void)
 	DedupSink dedup = make_dedup_sink(&target.base);
 	cpr_log_add_sink(l, &dedup.base);
 
-	cpr_log_info(l, "hello"); /* new → forwarded */
-	cpr_log_info(l, "hello"); /* dup → suppressed */
-	cpr_log_info(l, "hello"); /* dup → suppressed */
-	cpr_log_warn(l, "hello"); /* different level → forwarded */
-	cpr_log_warn(l, "world"); /* different message → forwarded */
+	cpr_log_info(l, "hello"); // new → forwarded
+	cpr_log_info(l, "hello"); // dup → suppressed
+	cpr_log_info(l, "hello"); // dup → suppressed
+	cpr_log_warn(l, "hello"); // different level → forwarded
+	cpr_log_warn(l, "world"); // different message → forwarded
 
 	TEST_ASSERT_EQUAL_INT(3, target.count);
 	TEST_ASSERT_EQUAL_INT(2, dedup.suppressed);

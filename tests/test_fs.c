@@ -31,9 +31,7 @@ static void write_test_file(const char *data, size_t len)
     TEST_ASSERT_EQUAL_INT(CPR_OK, r);
 }
 
-// =============================================================================
-// Path Utilities — pure string ops, no filesystem access needed
-// =============================================================================
+// --- Path Utilities ---
 
 // --- cpr_path_is_abs ---
 
@@ -97,7 +95,7 @@ void test_basename_no_sep(void)
 
 void test_basename_trailing_sep(void)
 {
-    /* returns pointer to last component start; trailing sep is included */
+    // returns pointer to last component start; trailing sep is included
     TEST_ASSERT_EQUAL_STRING("b/", cpr_path_basename("/a/b/"));
 }
 
@@ -277,9 +275,7 @@ void test_cwd_null(void)
     TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_cwd(buf, 0));
 }
 
-// =============================================================================
-// Stat
-// =============================================================================
+// --- Stat ---
 
 void test_stat_existing_file(void)
 {
@@ -345,9 +341,7 @@ void test_path_is_dir_false_for_file(void)
     TEST_ASSERT_FALSE(cpr_path_is_dir(TEST_FILE));
 }
 
-// =============================================================================
-// Filesystem Operations
-// =============================================================================
+// --- Filesystem Operations ---
 
 void test_mkdir_success(void)
 {
@@ -501,9 +495,7 @@ void test_copy_null(void)
     TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_fs_copy(TEST_FILE, NULL));
 }
 
-// =============================================================================
-// File I/O
-// =============================================================================
+// --- File I/O ---
 
 void test_open_read_nonexistent(void)
 {
@@ -709,9 +701,7 @@ void test_write_file_all_overwrites(void)
     TEST_ASSERT_EQUAL_INT(5, (int)st.size);
 }
 
-// =============================================================================
-// Directory Iterator
-// =============================================================================
+// --- Directory Iterator ---
 
 void test_open_dir_success(void)
 {
@@ -796,10 +786,6 @@ void test_next_dir_skips_dot_entries(void)
     }
     cpr_close_dir(it);
 }
-
-// =============================================================================
-// main
-// =============================================================================
 
 int main(void)
 {

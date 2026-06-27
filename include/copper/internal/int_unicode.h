@@ -22,6 +22,6 @@ static CPR_INLINE bool cpr__to_utf8(const wchar_t *wide, char *out,
 	return n > 0;
 }
 
-#endif /* CPR_PLATFORM_WINDOWS */
+#endif
 
-#endif /* CPR_INT_UNICODE_H */
+#endif // CPR_INT_UNICODE_H

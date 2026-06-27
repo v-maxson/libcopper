@@ -25,6 +25,7 @@ set(COPPER_SOURCES
         src/arena.c
         src/atomic.c
         src/copper.c
+        src/env.c
         src/error.c
         src/fs.c
         src/log.c

@@ -9,8 +9,7 @@
 #include <string.h>
 
 #if defined(CPR_PLATFORM_WINDOWS)
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
+#include "copper/internal/int_unicode.h"
 #else
 #include <dirent.h>
 #include <errno.h> // IWYU pragma: keep
@@ -34,19 +33,6 @@ static int cpr__fs_is_sep(char c)
 #define CPR__FILETIME_UNIX_OFFSET 116444736000000000ULL
 #define CPR__FILETIME_PER_MS \
 	(cpr_ms_to_ns(1ULL) / 100ULL) // 100 ns ticks per ms
-
-static bool cpr__to_wide(const char *utf8, wchar_t *out, int out_size)
-{
-	int n = MultiByteToWideChar(CP_UTF8, 0, utf8, -1, out, out_size);
-	return n > 0;
-}
-
-static bool cpr__to_utf8(const wchar_t *wide, char *out, int out_size)
-{
-	int n = WideCharToMultiByte(CP_UTF8, 0, wide, -1, out, out_size, NULL,
-				    NULL);
-	return n > 0;
-}
 
 static uint64_t cpr__filetime_to_ms(FILETIME ft)
 {

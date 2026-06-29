@@ -86,43 +86,36 @@ CPR_API bool cpr_arena_init_buf(CprArena *arena, void *buf, size_t size)
 // --- Allocation ---
 
 CPR_API void *cpr_arena_alloc_aligned(CprArena *arena, size_t size,
-				      size_t alignment, CprResult *out_result)
+				      size_t alignment)
 {
 	if (arena == NULL) {
-		if (out_result)
-			*out_result = CPR_ERR_INVALID;
+		cpr__set_error(CPR_ERR_INVALID, "invalid arguments");
 		return NULL;
 	}
 
-	size_t aligned_offset = 0;
-
 	if (!cpr__is_pow2(alignment)) {
-		if (out_result)
-			*out_result = CPR_ERR_ALIGN;
+		cpr__set_error(CPR_ERR_ALIGN,
+			       "alignment must be a non-zero power of two");
 		return NULL;
 	}
 
 	uintptr_t base = (uintptr_t)arena->buf;
-	aligned_offset = cpr__align_up(base + arena->offset, alignment) - base;
+	size_t aligned_offset =
+		cpr__align_up(base + arena->offset, alignment) - base;
 
 	if (size > arena->cap - aligned_offset) {
-		if (out_result)
-			*out_result = CPR_ERR_EXHAUSTED;
+		cpr__set_error(CPR_ERR_EXHAUSTED, "arena exhausted");
 		return NULL;
 	}
 
 	arena->prev_offset = arena->offset;
 	arena->offset = aligned_offset + size;
-
-	*out_result = CPR_OK;
 	return arena->buf + aligned_offset;
 }
 
-CPR_API void *cpr_arena_alloc(CprArena *arena, size_t size,
-			      CprResult *out_result)
+CPR_API void *cpr_arena_alloc(CprArena *arena, size_t size)
 {
-	return cpr_arena_alloc_aligned(arena, size, CPR_DEFAULT_ALIGNMENT,
-				       out_result);
+	return cpr_arena_alloc_aligned(arena, size, CPR_DEFAULT_ALIGNMENT);
 }
 
 CPR_API void cpr_arena_reset(CprArena *arena)

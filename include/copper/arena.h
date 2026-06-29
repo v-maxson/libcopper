@@ -2,7 +2,6 @@
 #define CPR_ARENA_H
 
 #include "defs.h"
-#include "result.h"
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -56,33 +55,25 @@ CPR_API bool cpr_arena_init_buf(CprArena *arena, void *buf, size_t size);
 // --- Allocation ---
 
 /// Allocates `size` bytes in `arena` at the specified `alignment`.
-///
-/// If `out_result` != NULL, populates it with either `CPR_OK` or `CPR_ERR_EXHAUSTED` in the event
-/// that the arena has run out of space.
-///
-/// Alignment must be a multiple of 2 and mustn't be 0. If it isn't, the returned pointer will be
-/// NULL and `out_result` will be set to `CPR_ERR_INVALID`
+/// `alignment` must be a non-zero power of two; if not, returns NULL with `CPR_ERR_ALIGN`.
+/// Returns NULL with `CPR_ERR_EXHAUSTED` if the arena has run out of space.
+/// On failure, call cpr_get_error() to inspect the error code.
 CPR_API void *cpr_arena_alloc_aligned(CprArena *arena, size_t size,
-				      size_t alignment, CprResult *out_result);
+				      size_t alignment);
 
-#define cpr_arena_new(arena, T, result) \
-	((T *)cpr_arena_alloc_aligned((arena), sizeof(T), cpr_(T), (res)))
+#define cpr_arena_new(arena, T) \
+	((T *)cpr_arena_alloc_aligned((arena), sizeof(T), cpr_alignof(T)))
 
 /// Allocates `size` bytes in `arena` aligned at `CPR_DEFAULT_ALIGNMENT`.
-///
-/// If `out_result` != NULL, populates it with either `CPR_OK` or `CPR_ERR_EXHAUSTED` in the event
-/// that the arena has run out of space.
-///
-/// Alignment must be a multiple of 2 and mustn't be 0. If it isn't, the returned pointer will be
-/// NULL and `out_result` will be set to `CPR_ERR_INVALID`
-CPR_API void *cpr_arena_alloc(CprArena *arena, size_t size,
-			      CprResult *out_result);
+/// Returns NULL with `CPR_ERR_EXHAUSTED` if the arena has run out of space.
+/// On failure, call cpr_get_error() to inspect the error code.
+CPR_API void *cpr_arena_alloc(CprArena *arena, size_t size);
 
 /// Resets the bump pointer to zero without freeing the backing buffer.
 /// All previously allocated pointers become invalid.
 CPR_API void cpr_arena_reset(CprArena *arena);
 
-/// Rewinds the bunp pointer to the previous allocation.
+/// Rewinds the bump pointer to the previous allocation.
 /// Only valid for one level of rewind, calling twice won't do anything.
 CPR_API void cpr_arena_rewind(CprArena *arena);
 

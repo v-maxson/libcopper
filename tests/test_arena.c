@@ -75,9 +75,9 @@ void test_init_success(void)
 
 void test_alloc_null_arena(void)
 {
-	CprResult res;
-	void *ptr = cpr_arena_alloc(NULL, 16, &res);
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, res);
+	cpr_clear_error();
+	void *ptr = cpr_arena_alloc(NULL, 16);
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_INVALID, cpr_get_error().code);
 	TEST_ASSERT_NULL(ptr);
 }
 
@@ -87,9 +87,7 @@ void test_alloc_returns_non_null(void)
 	static char buf[64];
 	cpr_arena_init_buf(&arena, buf, sizeof(buf));
 
-	CprResult res;
-	void *ptr = cpr_arena_alloc(&arena, 16, &res);
-	TEST_ASSERT_EQUAL_INT(CPR_OK, res);
+	void *ptr = cpr_arena_alloc(&arena, 16);
 	TEST_ASSERT_NOT_NULL(ptr);
 }
 
@@ -99,9 +97,7 @@ void test_alloc_advances_offset(void)
 	static char buf[128];
 	cpr_arena_init_buf(&arena, buf, sizeof(buf));
 
-	CprResult res;
-	cpr_arena_alloc(&arena, 32, &res);
-	TEST_ASSERT_EQUAL_INT(CPR_OK, res);
+	cpr_arena_alloc(&arena, 32);
 	TEST_ASSERT_GREATER_THAN_size_t(0, arena.offset);
 }
 
@@ -111,9 +107,7 @@ void test_alloc_memory_is_writable(void)
 	static char buf[128];
 	cpr_arena_init_buf(&arena, buf, sizeof(buf));
 
-	CprResult res;
-	int *p = cpr_arena_alloc(&arena, sizeof(int), &res);
-	TEST_ASSERT_EQUAL_INT(CPR_OK, res);
+	int *p = cpr_arena_alloc(&arena, sizeof(int));
 	TEST_ASSERT_NOT_NULL(p);
 	*p = 42;
 	TEST_ASSERT_EQUAL_INT(42, *p);
@@ -125,12 +119,10 @@ void test_alloc_exhaustion(void)
 	static char buf[16];
 	cpr_arena_init_buf(&arena, buf, sizeof(buf));
 
-	CprResult res;
-	cpr_arena_alloc(&arena, 16, &res);
-	TEST_ASSERT_EQUAL_INT(CPR_OK, res);
-
-	void *ptr = cpr_arena_alloc(&arena, 1, &res);
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_EXHAUSTED, res);
+	cpr_arena_alloc(&arena, 16);
+	cpr_clear_error();
+	void *ptr = cpr_arena_alloc(&arena, 1);
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_EXHAUSTED, cpr_get_error().code);
 	TEST_ASSERT_NULL(ptr);
 }
 
@@ -142,12 +134,10 @@ void test_alloc_aligned_power_of_two(void)
 
 	for (i = 0; i < sizeof(kAligns) / sizeof(kAligns[0]); i++) {
 		CprArena arena;
-		CprResult res;
 		void *ptr;
 
 		cpr_arena_init_buf(&arena, buf, sizeof(buf));
-		ptr = cpr_arena_alloc_aligned(&arena, 8, kAligns[i], &res);
-		TEST_ASSERT_EQUAL_INT(CPR_OK, res);
+		ptr = cpr_arena_alloc_aligned(&arena, 8, kAligns[i]);
 		TEST_ASSERT_NOT_NULL(ptr);
 		TEST_ASSERT_EQUAL_size_t(0, (size_t)ptr % kAligns[i]);
 	}
@@ -159,9 +149,9 @@ void test_alloc_aligned_non_pow2_rejected(void)
 	static char buf[128];
 	cpr_arena_init_buf(&arena, buf, sizeof(buf));
 
-	CprResult res;
-	void *ptr = cpr_arena_alloc_aligned(&arena, 8, 3, &res);
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_ALIGN, res);
+	cpr_clear_error();
+	void *ptr = cpr_arena_alloc_aligned(&arena, 8, 3);
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_ALIGN, cpr_get_error().code);
 	TEST_ASSERT_NULL(ptr);
 }
 
@@ -171,9 +161,9 @@ void test_alloc_aligned_zero_alignment_rejected(void)
 	static char buf[128];
 	cpr_arena_init_buf(&arena, buf, sizeof(buf));
 
-	CprResult res;
-	void *ptr = cpr_arena_alloc_aligned(&arena, 8, 0, &res);
-	TEST_ASSERT_EQUAL_INT(CPR_ERR_ALIGN, res);
+	cpr_clear_error();
+	void *ptr = cpr_arena_alloc_aligned(&arena, 8, 0);
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_ALIGN, cpr_get_error().code);
 	TEST_ASSERT_NULL(ptr);
 }
 
@@ -183,11 +173,10 @@ void test_alloc_multiple_sequential(void)
 	static char buf[256];
 	cpr_arena_init_buf(&arena, buf, sizeof(buf));
 
-	CprResult res;
-	void *a = cpr_arena_alloc(&arena, 16, &res);
-	TEST_ASSERT_EQUAL_INT(CPR_OK, res);
-	void *b = cpr_arena_alloc(&arena, 16, &res);
-	TEST_ASSERT_EQUAL_INT(CPR_OK, res);
+	void *a = cpr_arena_alloc(&arena, 16);
+	void *b = cpr_arena_alloc(&arena, 16);
+	TEST_ASSERT_NOT_NULL(a);
+	TEST_ASSERT_NOT_NULL(b);
 	TEST_ASSERT_NOT_EQUAL(a, b);
 }
 
@@ -199,15 +188,11 @@ void test_reset_allows_reallocation(void)
 	static char buf[64];
 	cpr_arena_init_buf(&arena, buf, sizeof(buf));
 
-	CprResult res;
-	cpr_arena_alloc(&arena, 64, &res);
-	TEST_ASSERT_EQUAL_INT(CPR_OK, res);
-
+	cpr_arena_alloc(&arena, 64);
 	cpr_arena_reset(&arena);
 	TEST_ASSERT_EQUAL_size_t(0, arena.offset);
 
-	void *ptr = cpr_arena_alloc(&arena, 64, &res);
-	TEST_ASSERT_EQUAL_INT(CPR_OK, res);
+	void *ptr = cpr_arena_alloc(&arena, 64);
 	TEST_ASSERT_NOT_NULL(ptr);
 }
 
@@ -217,11 +202,10 @@ void test_rewind_reverts_last_alloc(void)
 	static char buf[128];
 	cpr_arena_init_buf(&arena, buf, sizeof(buf));
 
-	CprResult res;
-	cpr_arena_alloc(&arena, 16, &res);
+	cpr_arena_alloc(&arena, 16);
 	size_t offset_after_first = arena.offset;
 
-	cpr_arena_alloc(&arena, 32, &res);
+	cpr_arena_alloc(&arena, 32);
 	cpr_arena_rewind(&arena);
 
 	TEST_ASSERT_EQUAL_size_t(offset_after_first, arena.offset);
@@ -233,9 +217,8 @@ void test_rewind_idempotent_after_second_call(void)
 	static char buf[128];
 	cpr_arena_init_buf(&arena, buf, sizeof(buf));
 
-	CprResult res;
-	cpr_arena_alloc(&arena, 16, &res);
-	cpr_arena_alloc(&arena, 32, &res);
+	cpr_arena_alloc(&arena, 16);
+	cpr_arena_alloc(&arena, 32);
 	cpr_arena_rewind(&arena);
 	size_t offset_after_first_rewind = arena.offset;
 

@@ -3,6 +3,7 @@
 #include "copper/defs.h"
 #include "copper/internal/int_error.h"
 #include "copper/result.h"
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -101,7 +102,8 @@ CPR_API void *cpr_arena_alloc_aligned(CprArena *arena, size_t size,
 		return NULL;
 	}
 
-	aligned_offset = cpr__align_up(arena->offset, alignment);
+	uintptr_t base = (uintptr_t)arena->buf;
+	aligned_offset = cpr__align_up(base + arena->offset, alignment) - base;
 
 	if (size > arena->cap - aligned_offset) {
 		if (out_result)

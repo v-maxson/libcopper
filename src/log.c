@@ -360,8 +360,12 @@ CprLogSink *cpr_log_file_sink(const CprFileSinkConfig *config)
 
 	fs->current_size = 0;
 	if (config->open_mode == CPR_LOG_FILE_APPEND) {
-		fseek(fs->fp, 0, SEEK_END);
-		fs->current_size = ftell(fs->fp);
+#if defined(CPR_PLATFORM_WINDOWS) && defined(CPR_COMPILER_MSVC)
+		long long pos = _ftelli64(fs->fp);
+#else
+		off_t pos = ftello(fs->fp);
+#endif
+		fs->current_size = (pos > 0) ? (size_t)pos : 0;
 	}
 
 	dt = cpr_time_local(cpr_time_now());

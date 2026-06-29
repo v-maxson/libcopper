@@ -226,7 +226,8 @@ bool cpr_normalize_path(char *buf, size_t buf_size, const char *path)
 					*out++ = CPR_FS_SEP;
 				*out++ = '.';
 				*out++ = '.';
-				comp_ends[ncomp++] = out;
+				if (ncomp < 256)
+					comp_ends[ncomp++] = out;
 			}
 		} else {
 			char *comp_start = out; // position before sep+component

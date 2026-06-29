@@ -167,7 +167,8 @@ bool cpr_normalize_path(char *buf, size_t buf_size, const char *path)
 	}
 
 	size_t plen = strlen(path);
-	if (plen + 1 > buf_size) {
+	size_t min_out = plen == 0 ? 2 : plen + 1; // empty path -> ".\0"
+	if (min_out > buf_size) {
 		cpr__set_error(CPR_ERR_OVERFLOW, "buffer too small");
 		return false;
 	}

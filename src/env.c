@@ -19,7 +19,7 @@ bool cpr_get_env(const char *name, char *buf, size_t buf_size)
 
 #if defined(CPR_PLATFORM_WINDOWS)
 	{
-		wchar_t *wname = cpr__to_wide(name);
+		wchar_t *wname = cpr__to_wide_alloc(name);
 		if (!wname) {
 			cpr__set_error(CPR_ERR_OOM, "out of memory");
 			return false;
@@ -91,13 +91,13 @@ bool cpr_set_env(const char *name, const char *value)
 
 #if defined(CPR_PLATFORM_WINDOWS)
 	{
-		wchar_t wname = cpr__to_wide(name);
+		wchar_t *wname = cpr__to_wide_alloc(name);
 		if (!wname) {
 			cpr__set_error(CPR_ERR_OOM, "out of memory");
 			return false;
 		}
 
-		wchar_t *wval = cpr__to_wide(value);
+		wchar_t *wval = cpr__to_wide_alloc(value);
 		if (!wval) {
 			free(wname);
 			cpr__set_error(CPR_ERR_OOM, "out of memory");
@@ -113,7 +113,7 @@ bool cpr_set_env(const char *name, const char *value)
 				       "failed to set environment variable");
 			return false;
 		}
-		return false;
+		return true;
 	}
 #else
 	if (setenv(name, value, 1) != 0) {
@@ -133,7 +133,7 @@ bool cpr_unset_env(const char *name)
 	}
 #if defined(CPR_PLATFORM_WINDOWS)
 	{
-		wchar_t *name_w = cpr__utf8_to_wide(name);
+		wchar_t *name_w = cpr__to_wide_alloc(name);
 		if (!name_w) {
 			cpr__set_error(CPR_ERR_OOM, "out of memory");
 			return false;

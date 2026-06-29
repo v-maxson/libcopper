@@ -15,6 +15,7 @@ bool cpr_get_env(const char *name, char *buf, size_t buf_size)
 {
 	if (!name || !buf || buf_size == 0) {
 		cpr__set_error(CPR_ERR_INVALID, "invalid arguments");
+		return false;
 	}
 
 #if defined(CPR_PLATFORM_WINDOWS)
@@ -36,6 +37,8 @@ bool cpr_get_env(const char *name, char *buf, size_t buf_size)
 				cpr__set_error(
 					CPR_ERR_IO,
 					"failed to read environment variable");
+
+			return false;
 		}
 
 		wchar_t *wval = malloc(wlen * sizeof(wchar_t));

@@ -448,7 +448,11 @@ CprLogger *cpr_log_create(const CprLoggerConfig *config)
 	memset(logger->sinks, 0, sizeof(logger->sinks));
 
 	if (logger->thread_safe)
-		cpr_mutex_init(&logger->mutex);
+		if (!cpr_mutex_init(&logger->mutex)) {
+			free(logger);
+			// cpr_mutex_init sets the error appropriately
+			return NULL;
+		}
 
 	return logger;
 }

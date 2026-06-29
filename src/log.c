@@ -257,7 +257,7 @@ static void cpr__file_rotate(CprFileSink *fs)
 	}
 
 	top = fs->max_files > 0 ? fs->max_files - 1 : 999;
-	for (i = top; i >= top; i--) {
+	for (i = top; i >= 1; i--) {
 		snprintf(old_path, sizeof(old_path), "%s.%d", fs->path, i);
 		snprintf(new_path, sizeof(new_path), "%s.%d", fs->path, i + 1);
 		rename(old_path,

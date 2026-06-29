@@ -32,7 +32,7 @@ static void cpr__write_marker(char *buf, size_t n, const char *marker)
 		return;
 
 	mlen = strlen(marker);
-	if (n > mlen + 1)
+	if (n >= mlen + 1)
 		memcpy(buf + n - 1 - mlen, marker, mlen);
 
 	buf[n - 1] = '\0';

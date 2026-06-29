@@ -93,17 +93,12 @@ void test_id_matches_current(void)
 	TEST_ASSERT_EQUAL_UINT64(id, args.self_id);
 }
 
-static void id_store_worker(void *arg)
-{
-	CprThreadId *id = (CprThreadId *)arg;
-	*id = cpr_thrd_current_id();
-}
-
 void test_distinct_ids(void)
 {
-	CprThreadId id1 = 0, id2 = 0;
-	CprThread *t1 = cpr_thrd_create(id_store_worker, &id1);
-	CprThread *t2 = cpr_thrd_create(id_store_worker, &id2);
+	CprThread *t1 = cpr_thrd_create(noop_worker, NULL);
+	CprThread *t2 = cpr_thrd_create(noop_worker, NULL);
+	CprThreadId id1 = cpr_thrd_get_id(t1);
+	CprThreadId id2 = cpr_thrd_get_id(t2);
 	cpr_thrd_join(t1);
 	cpr_thrd_join(t2);
 	TEST_ASSERT_NOT_EQUAL(id1, id2);

@@ -32,10 +32,12 @@ CPR_API uint64_t cpr_time_now(void)
 CPR_API uint64_t cpr_time_monotonic(void)
 {
 #if defined(CPR_PLATFORM_WINDOWS)
-	static LARGE_INTEGER s_freq = { { 0, 0 } };
-	LARGE_INTEGER counter;
-	if (s_freq.QuadPart == 0)
-		QueryPerformanceFrequency(&s_freq);
+	static volatile LONGLONG s_freq_qp = 0;
+	if (s_freq_qp == 0) {
+		LARGE_INTEGER f;
+		QueryPerformanceFrequency(&f);
+		InterlockedCompareExchange64(&s_freq_qp, f.QuadPart, 0);
+	}
 	QueryPerformanceCounter(&counter);
 	return (uint64_t)counter.QuadPart * 1000ULL / (uint64_t)s_freq.QuadPart;
 #else

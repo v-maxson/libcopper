@@ -95,7 +95,8 @@ void test_basename_no_sep(void)
 
 void test_basename_trailing_sep(void)
 {
-	// returns pointer to last component start; trailing sep is included
+	// Non-allocating: returns a pointer into the original string, so the
+	// trailing separator is part of the returned substring by definition.
 	TEST_ASSERT_EQUAL_STRING("b/", cpr_path_basename("/a/b/"));
 }
 

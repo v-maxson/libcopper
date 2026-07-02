@@ -50,6 +50,9 @@ target_include_directories(copper
 )
 
 target_link_libraries(copper PRIVATE Threads::Threads)
+if(WIN32)
+        target_link_libraries(copper PRIVATE bcrypt)
+endif()
 
 if(UNIX OR APPLE)
         target_compile_definitions(copper PRIVATE _POSIX_C_SOURCE=200809L)

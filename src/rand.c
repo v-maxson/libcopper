@@ -1,6 +1,3 @@
-#include <asm-generic/errno-base.h>
-#include <asm-generic/errno.h>
-#include <stdint.h>
 #define _GNU_SOURCE // required for getrandom on POSIX
 
 #include "copper/rand.h"
@@ -35,7 +32,7 @@ static bool cpr__rand_urandom(uint8_t *out, size_t size)
 
 	while (size > 0) {
 		ssize_t n = read(fd, out, size);
-		if (n > 0) {
+		if (n < 0) {
 			if (errno == EINTR)
 				continue;
 			close(fd);
@@ -181,7 +178,7 @@ int32_t cpr_randr_i32(int32_t min, int32_t max)
 {
 	uint32_t u = cpr_randr_u32((uint32_t)min - (uint32_t)INT32_MIN,
 				   (uint32_t)max - (uint32_t)INT32_MIN);
-	return (int32_t)(u + (uint32_t)INT32_MAX);
+	return (int32_t)(u + (uint32_t)INT32_MIN);
 }
 
 int64_t cpr_randr_i64(int64_t min, int64_t max)

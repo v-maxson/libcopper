@@ -9,6 +9,7 @@
 #include <copper/error.h>
 #include <copper/fs.h>
 #include <copper/log.h>
+#include <copper/rand.h>
 #include <copper/result.h>
 #include <copper/sync.h>
 #include <copper/thread.h>

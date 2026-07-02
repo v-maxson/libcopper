@@ -29,6 +29,7 @@ set(COPPER_SOURCES
         src/error.c
         src/fs.c
         src/log.c
+        src/rand.c
         src/sync.c
         src/thread.c
         src/time.c

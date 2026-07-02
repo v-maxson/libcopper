@@ -8,8 +8,10 @@
 
 #if defined(CPR_PLATFORM_WINDOWS)
 #define WIN32_LEAN_AND_MEAN
-#include <bcrypt.h>
+// clang-format off
 #include <windows.h>
+#include <bcrypt.h> // must be included after windows.h
+// clang-format on
 #elif defined(CPR_PLATFORM_LINUX) || defined(CPR_PLATFORM_ANDROID)
 #include <errno.h>
 #include <fcntl.h>

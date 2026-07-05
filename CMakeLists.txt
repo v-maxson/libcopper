@@ -30,6 +30,7 @@ set(COPPER_SOURCES
         src/fs.c
         src/log.c
         src/rand.c
+        src/ringbuf.c
         src/sync.c
         src/thread.c
         src/time.c

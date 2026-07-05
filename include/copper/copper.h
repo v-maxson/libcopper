@@ -13,6 +13,7 @@
 #include <copper/log.h>
 #include <copper/rand.h>
 #include <copper/result.h>
+#include <copper/ringbuf.h>
 #include <copper/sync.h>
 #include <copper/thread.h>
 #include <copper/time.h>

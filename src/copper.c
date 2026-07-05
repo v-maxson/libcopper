@@ -1,9 +1,6 @@
 #include "copper/copper.h"
 
-#define CPR_VERSION_MAJOR 0
-#define CPR_VERSION_MINOR 4
-#define CPR_VERSION_PATCH 0
-#define CPR_VERSION_STRING "0.4.0"
+#include "copper/internal/int_version.h"
 
 int cpr_version_major(void)
 {

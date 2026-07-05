@@ -8,6 +8,12 @@ set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
+configure_file(
+        cmake/int_version.h.in
+        ${CMAKE_CURRENT_BINARY_DIR}/generated/copper/internal/int_version.h
+        @ONLY
+)
+
 option(COPPER_BUILD_TESTS    "Build the test suite"     ON)
 option(COPPER_BUILD_EXAMPLES "Build examples"           ON)
 option(COPPER_SHARED         "Build as shared library"  OFF)
@@ -48,6 +54,8 @@ target_include_directories(copper
         PUBLIC
                 $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
                 $<INSTALL_INTERFACE:include>
+        PRIVATE
+                ${CMAKE_CURRENT_BINARY_DIR}/generated
 )
 
 target_link_libraries(copper PRIVATE Threads::Threads)

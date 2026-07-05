@@ -32,7 +32,7 @@ CPR_INLINE static uint16_t cpr_bswap16(uint16_t v)
 /// Reverse the byte order of `v`.
 CPR_INLINE static uint32_t cpr_bswap32(uint32_t v)
 {
-#if defined(CPR_COMPILER_GCC) | defined(CPR_COMPILER_CLANG)
+#if defined(CPR_COMPILER_GCC) || defined(CPR_COMPILER_CLANG)
 	return __builtin_bswap32(v);
 #elif defined(CPR_COMPILER_MSVC)
 	return _byteswap_ulong(v);

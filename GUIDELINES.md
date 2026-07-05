@@ -70,7 +70,12 @@ Comment the *why*, not the *what*. If removing the comment wouldn't confuse a fu
 
 ## Error handling
 
-Return errors as `CprResult`; no global error state. Document the possible return codes in the header.
+Functions signal success/failure via their return value (typically `bool`,
+or `NULL`/a sentinel for functions that return a pointer/handle). On
+failure, call `cpr__set_error(code, msg)` to record a `CprResult` code and
+message in the thread-local error state; callers inspect it with
+`cpr_get_error()` and can reset it with `cpr_clear_error()`. Document the
+`CprResult` codes a function can set in its header comment.
 
 ## Adding a new module
 

@@ -6,6 +6,7 @@
 #include <copper/atomic.h>
 #include <copper/bytesize.h>
 #include <copper/defs.h>
+#include <copper/endian.h>
 #include <copper/env.h>
 #include <copper/error.h>
 #include <copper/fs.h>

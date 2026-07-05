@@ -26,6 +26,20 @@ A lightweight, cross-platform utility library for C99.
 
 - **Byte Size Utilities** - Macros for writing byte sizes in readable units (KB, MB, GB, KiB, MiB, GiB, and more) with conversions between them.
 
+- **Environment Variables** - Get, set, and unset environment variables.
+
+- **Random Numbers** - Cryptographically secure random bytes and uniformly distributed integers/floats, backed by the OS RNG on every supported platform.
+
+- **Base64** - Encode and decode Base64, with standard and URL-safe alphabets.
+
+- **Endian Conversion** - Byte-swap and host/little/big-endian conversions for 16/32/64-bit integers, plus helpers to load and store them directly from/to a byte buffer.
+
+- **Ring Buffer** - A lock-free, single-producer/single-consumer byte ring buffer for passing data between two threads.
+
+## Error Handling
+
+Functions signal success or failure through their return value (typically `bool`, or `NULL`/a sentinel for functions returning a pointer or handle). On failure, a thread-local error state is set; call `cpr_get_error()` to retrieve the `CprResult` code and a human-readable message, and `cpr_clear_error()` to reset it.
+
 ## Supported Platforms
 
 | Platform | |
@@ -55,7 +69,6 @@ It's probably **not** what you want if:
 ## Coming Soon
 
 - Dynamic array type
-- Base64 encoding
 - CLI argument parsing
 - Hash map
 - UUID generation

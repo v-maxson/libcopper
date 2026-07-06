@@ -132,6 +132,18 @@ const char *cpr_log_level_strlc(CprLogLevel level)
 
 // --- Built-in formatters ---
 
+static const char *cpr__basename(const char *path)
+{
+	const char *slash = strrchr(path, '/');
+	const char *backslash = strrchr(path, '\\');
+	const char *sep = slash;
+
+	if (backslash && (!sep || backslash > sep))
+		sep = backslash;
+
+	return sep ? sep + 1 : path;
+}
+
 int cpr_log_format_default(const CprLogMessage *msg, char *buf, size_t buf_size,
 			   bool *out_truncated)
 {
@@ -149,7 +161,7 @@ int cpr_log_format_full(const CprLogMessage *msg, char *buf, size_t buf_size,
 	int w = snprintf(buf, buf_size,
 			 "[%02d:%02d:%02d.%03d] [%-5s] %s:%d %s() %s\n",
 			 dt.hour, dt.minute, dt.second, dt.ms,
-			 cpr_log_level_str(msg->level), msg->file, msg->line,
+			 cpr_log_level_str(msg->level), cpr__basename(msg->file), msg->line,
 			 msg->func, msg->message);
 	return cpr__format_finish(buf, buf_size, w, out_truncated);
 }

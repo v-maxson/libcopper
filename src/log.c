@@ -1,5 +1,6 @@
 #include "copper/log.h"
 
+#include "copper/fs.h"
 #include "copper/internal/int_error.h"
 #include "copper/result.h"
 #include "copper/sync.h"
@@ -36,17 +37,6 @@ static void cpr__write_marker(char *buf, size_t n, const char *marker)
 		memcpy(buf + n - 1 - mlen, marker, mlen);
 
 	buf[n - 1] = '\0';
-}
-
-static FILE *cpr__fopen(const char *path, const char *mode)
-{
-#if defined(CPR_PLATFORM_WINDOWS)
-	FILE *fp = NULL;
-	fopen_s(&fp, path, mode);
-	return fp;
-#else
-	return fopen(path, mode);
-#endif
 }
 
 static bool cpr__is_tty(FILE *stream)
@@ -161,8 +151,9 @@ int cpr_log_format_full(const CprLogMessage *msg, char *buf, size_t buf_size,
 	int w = snprintf(buf, buf_size,
 			 "[%02d:%02d:%02d.%03d] [%-5s] %s:%d %s() %s\n",
 			 dt.hour, dt.minute, dt.second, dt.ms,
-			 cpr_log_level_str(msg->level), cpr__basename(msg->file), msg->line,
-			 msg->func, msg->message);
+			 cpr_log_level_str(msg->level),
+			 cpr__basename(msg->file), msg->line, msg->func,
+			 msg->message);
 	return cpr__format_finish(buf, buf_size, w, out_truncated);
 }
 
@@ -246,7 +237,7 @@ typedef struct {
 	CprLogRollMode roll_mode;
 	size_t max_bytes;
 	int max_files;
-	FILE *fp;
+	CprFile *file;
 	size_t current_size;
 	int current_day;
 	int current_hour;
@@ -254,32 +245,30 @@ typedef struct {
 
 static void cpr__file_rotate(CprFileSink *fs)
 {
-	char old_path[512], new_path[512];
-	int top, i;
-
-	if (fs->fp) {
-		fclose(fs->fp);
-		fs->fp = NULL;
+	if (fs->file) {
+		cpr_close_file(fs->file);
+		fs->file = NULL;
 	}
 
+	char old_path[512], new_path[512];
 	if (fs->max_files > 0) {
 		snprintf(old_path, sizeof(old_path), "%s.%d", fs->path,
 			 fs->max_files);
-		remove(old_path);
+		cpr_remove_file(old_path); // ignored if old_path doesn't exist.
 	}
 
-	top = fs->max_files > 0 ? fs->max_files - 1 : 999;
-	for (i = top; i >= 1; i--) {
+	int top = fs->max_files > 0 ? fs->max_files - 1 : 999;
+	for (int i = top; i >= 1; i--) {
 		snprintf(old_path, sizeof(old_path), "%s.%d", fs->path, i);
 		snprintf(new_path, sizeof(new_path), "%s.%d", fs->path, i + 1);
-		rename(old_path,
-		       new_path); // ignored if old_path doesn't exist.
+		cpr_fs_rename(old_path,
+			      new_path); // ignored if old_path doesn't exist.
 	}
 
 	snprintf(new_path, sizeof(new_path), "%s.1", fs->path);
-	rename(fs->path, new_path);
+	cpr_fs_rename(fs->path, new_path);
 
-	fs->fp = cpr__fopen(fs->path, "w");
+	fs->file = cpr_open_file(fs->path, CPR_FILE_WRITE);
 	fs->current_size = 0;
 }
 
@@ -309,41 +298,37 @@ static void cpr__file_write(CprLogSink *sink, const CprLogMessage *msg,
 	CprFileSink *fs = (CprFileSink *)sink;
 	cpr__file_maybe_rotate(fs, msg);
 
-	if (!fs->fp)
+	if (!fs->file)
 		return;
-	fwrite(buf, 1, len, fs->fp);
+	cpr_write_file(fs->file, buf, len);
 	fs->current_size += len;
 }
 
 static void cpr__file_flush(CprLogSink *sink)
 {
 	CprFileSink *fs = (CprFileSink *)sink;
-	if (fs->fp)
-		fflush(fs->fp);
+	if (fs->file)
+		cpr_flush_file(fs->file);
 }
 
 static void cpr__file_destroy(CprLogSink *sink)
 {
 	CprFileSink *fs = (CprFileSink *)sink;
-	if (fs->fp)
-		fclose(fs->fp);
+	if (fs->file)
+		cpr_close_file(fs->file);
 	free(fs->path);
 	free(fs);
 }
 
 CprLogSink *cpr_log_file_sink(const CprFileSinkConfig *config)
 {
-	CprFileSink *fs;
-	const char *mode;
-	CprDateTime dt;
-
 	if (!config || !config->path) {
 		cpr__set_error(CPR_ERR_INVALID,
 			       !config ? "config is NULL" : "path is NULL");
 		return NULL;
 	}
 
-	fs = malloc(sizeof(*fs));
+	CprFileSink *fs = malloc(sizeof(*fs));
 	if (!fs) {
 		cpr__set_error(CPR_ERR_OOM, "out of memory");
 		return NULL;
@@ -361,26 +346,23 @@ CprLogSink *cpr_log_file_sink(const CprFileSinkConfig *config)
 	fs->max_bytes = config->max_bytes;
 	fs->max_files = config->max_files;
 
-	mode = (config->open_mode == CPR_LOG_FILE_OVERWRITE) ? "w" : "a";
-	fs->fp = cpr__fopen(config->path, mode);
-	if (!fs->fp) {
+	CprFileMode mode = (config->open_mode == CPR_LOG_FILE_OVERWRITE) ?
+				   CPR_FILE_WRITE :
+				   CPR_FILE_APPEND;
+	fs->file = cpr_open_file(config->path, mode);
+	if (!fs->file) {
 		free(fs->path);
 		free(fs);
-		cpr__set_error(CPR_ERR_IO, "fopen failed");
-		return NULL;
+		return NULL; // cpr_open_file sets the error appropriately
 	}
 
 	fs->current_size = 0;
 	if (config->open_mode == CPR_LOG_FILE_APPEND) {
-#if defined(CPR_PLATFORM_WINDOWS) && defined(CPR_COMPILER_MSVC)
-		long long pos = _ftelli64(fs->fp);
-#else
-		off_t pos = ftello(fs->fp);
-#endif
-		fs->current_size = (pos > 0) ? (size_t)pos : 0;
+		int64_t sz = cpr_file_size(fs->file);
+		fs->current_size = (sz > 0) ? (size_t)sz : 0;
 	}
 
-	dt = cpr_time_local(cpr_time_now());
+	CprDateTime dt = cpr_time_local(cpr_time_now());
 	fs->current_day = dt.yday;
 	fs->current_hour = dt.hour;
 

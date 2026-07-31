@@ -21,7 +21,7 @@ static void cpr__default_free(void *user_data, void *ptr)
 	free(ptr);
 }
 
-CPR_API CprArenaAllocator cpr_arena_alloc_default(void)
+CprArenaAllocator cpr_arena_alloc_default(void)
 {
 	return (CprArenaAllocator){ .alloc = cpr__default_alloc,
 				    .free = cpr__default_free,
@@ -42,8 +42,8 @@ static int cpr__is_pow2(size_t v)
 
 // --- Initializers ---
 
-CPR_API bool cpr_arena_init(CprArena *arena, CprArenaAllocator allocator,
-			    size_t capacity)
+bool cpr_arena_init(CprArena *arena, CprArenaAllocator allocator,
+		    size_t capacity)
 {
 	void *buf = NULL;
 
@@ -65,7 +65,7 @@ CPR_API bool cpr_arena_init(CprArena *arena, CprArenaAllocator allocator,
 	return true;
 }
 
-CPR_API bool cpr_arena_init_buf(CprArena *arena, void *buf, size_t size)
+bool cpr_arena_init_buf(CprArena *arena, void *buf, size_t size)
 {
 	if (arena == NULL || buf == NULL || size == 0) {
 		cpr__set_error(CPR_ERR_INVALID, "invalid arguments");
@@ -85,8 +85,8 @@ CPR_API bool cpr_arena_init_buf(CprArena *arena, void *buf, size_t size)
 
 // --- Allocation ---
 
-CPR_API void *cpr_arena_alloc_aligned(CprArena *arena, size_t size,
-				      size_t alignment)
+// cppcheck-suppress staticFunction // false positive
+void *cpr_arena_alloc_aligned(CprArena *arena, size_t size, size_t alignment)
 {
 	if (arena == NULL) {
 		cpr__set_error(CPR_ERR_INVALID, "invalid arguments");
@@ -113,12 +113,12 @@ CPR_API void *cpr_arena_alloc_aligned(CprArena *arena, size_t size,
 	return arena->buf + aligned_offset;
 }
 
-CPR_API void *cpr_arena_alloc(CprArena *arena, size_t size)
+void *cpr_arena_alloc(CprArena *arena, size_t size)
 {
 	return cpr_arena_alloc_aligned(arena, size, CPR_DEFAULT_ALIGNMENT);
 }
 
-CPR_API void cpr_arena_reset(CprArena *arena)
+void cpr_arena_reset(CprArena *arena)
 {
 	if (arena == NULL)
 		return;
@@ -127,7 +127,7 @@ CPR_API void cpr_arena_reset(CprArena *arena)
 	arena->prev_offset = 0;
 }
 
-CPR_API void cpr_arena_rewind(CprArena *arena)
+void cpr_arena_rewind(CprArena *arena)
 {
 	if (arena == NULL)
 		return;
@@ -135,7 +135,7 @@ CPR_API void cpr_arena_rewind(CprArena *arena)
 	arena->offset = arena->prev_offset;
 }
 
-CPR_API void cpr_arena_free(CprArena *arena)
+void cpr_arena_free(CprArena *arena)
 {
 	if (arena == NULL)
 		return;

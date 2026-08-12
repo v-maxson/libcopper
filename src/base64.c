@@ -128,11 +128,6 @@ bool cpr_base64_decode(const char *text, size_t text_size, void *buf,
 		return true;
 	}
 
-	if (!buf) {
-		cpr__set_error(CPR_ERR_INVALID, "NULL argument");
-		return false;
-	}
-
 	if (text_size % 4 == 1) {
 		cpr__set_error(CPR_ERR_INVALID, "invalid Base64 length");
 		return false;

@@ -91,7 +91,7 @@ bool cpr_base64_encode(const void *data, size_t data_size, char *buf,
 		*out++ = cpr__base64_char(n & 0x3F, variant);
 	}
 
-	size_t rem = data_size - 1;
+	size_t rem = data_size - i;
 	if (rem == 1) {
 		uint32_t n = (uint32_t)in[i] << 16;
 		*out++ = cpr__base64_char((n >> 18) & 0x3F, variant);

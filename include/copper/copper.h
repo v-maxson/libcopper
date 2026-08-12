@@ -4,6 +4,7 @@
 // Transient includes.
 #include <copper/arena.h>
 #include <copper/atomic.h>
+#include <copper/base64.h>
 #include <copper/bytesize.h>
 #include <copper/defs.h>
 #include <copper/endian.h>

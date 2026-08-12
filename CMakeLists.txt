@@ -30,6 +30,7 @@ include(cmake/CopperPlatform.cmake)
 set(COPPER_SOURCES
         src/arena.c
         src/atomic.c
+        src/base64.c
         src/copper.c
         src/env.c
         src/error.c

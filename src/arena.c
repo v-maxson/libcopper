@@ -118,7 +118,7 @@ void *cpr_arena_alloc_aligned(CprArena *arena, size_t size, size_t alignment)
 
 	arena->prev_offset = arena->offset;
 	arena->offset = aligned_offset + size;
-	return arena->buf;
+	return arena->buf + aligned_offset;
 }
 
 void *cpr_arena_alloc(CprArena *arena, size_t size)

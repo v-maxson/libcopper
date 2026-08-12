@@ -118,7 +118,7 @@ bool cpr_base64_decode(const char *text, size_t text_size, void *buf,
 		       size_t buf_size, CprBase64Variant variant,
 		       size_t *out_size)
 {
-	if (!buf || (!text && text_size > 0)) {
+	if (!buf || !out_size || (!text && text_size > 0)) {
 		cpr__set_error(CPR_ERR_INVALID, "NULL argument");
 		return false;
 	}

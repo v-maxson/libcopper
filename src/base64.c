@@ -175,8 +175,8 @@ bool cpr_base64_decode(const char *text, size_t text_size, void *buf,
 	}
 
 	if (final_chars == 2) {
-		int v0 = cpr__base64_char((uint8_t)text[i], variant);
-		int v1 = cpr__base64_char((uint8_t)text[i + 1], variant);
+		int v0 = cpr__base64_charval((uint8_t)text[i], variant);
+		int v1 = cpr__base64_charval((uint8_t)text[i + 1], variant);
 
 		if (v0 < 0 || v1 < 0) {
 			cpr__set_error(CPR_ERR_INVALID,

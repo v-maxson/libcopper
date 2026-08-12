@@ -68,7 +68,7 @@ bool cpr_base64_encode(const void *data, size_t data_size, char *buf,
 		       size_t buf_size, CprBase64Variant variant, bool pad)
 {
 	if (!buf || (!data && data_size > 0)) {
-		cpr__set_error(CPR_ERR_OVERFLOW, "NULL argument");
+		cpr__set_error(CPR_ERR_INVALID, "NULL argument");
 		return false;
 	}
 

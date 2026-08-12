@@ -167,6 +167,20 @@ void test_alloc_aligned_zero_alignment_rejected(void)
 	TEST_ASSERT_NULL(ptr);
 }
 
+void test_alloc_aligned_padding_past_cap(void)
+{
+	CprArena arena;
+	static char buf[64];
+
+	cpr_arena_init_buf(&arena, buf, sizeof(buf));
+	TEST_ASSERT_NOT_NULL(cpr_arena_alloc(&arena, sizeof(buf)));
+
+	cpr_clear_error();
+	void *ptr = cpr_arena_alloc_aligned(&arena, 1, 64);
+	TEST_ASSERT_NULL(ptr);
+	TEST_ASSERT_EQUAL_INT(CPR_ERR_EXHAUSTED, cpr_get_error().code);
+}
+
 void test_alloc_multiple_sequential(void)
 {
 	CprArena arena;
@@ -267,6 +281,7 @@ int main(void)
 	RUN_TEST(test_alloc_aligned_power_of_two);
 	RUN_TEST(test_alloc_aligned_non_pow2_rejected);
 	RUN_TEST(test_alloc_aligned_zero_alignment_rejected);
+	RUN_TEST(test_alloc_aligned_padding_past_cap);
 	RUN_TEST(test_alloc_multiple_sequential);
 
 	RUN_TEST(test_reset_allows_reallocation);

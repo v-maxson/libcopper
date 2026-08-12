@@ -308,7 +308,7 @@ void test_stat_existing_file(void)
 	TEST_ASSERT_TRUE(cpr_fs_stat(TEST_FILE, &st));
 	TEST_ASSERT_EQUAL_INT(5, (int)st.size);
 	TEST_ASSERT_EQUAL_INT(CPR_FS_TYPE_FILE, st.type);
-	TEST_ASSERT_GREATER_THAN(0, (int)st.mtime_ms);
+	TEST_ASSERT_GREATER_THAN(0, (long long)st.mtime_ms);
 }
 
 void test_stat_existing_dir(void)

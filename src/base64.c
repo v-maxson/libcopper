@@ -167,7 +167,8 @@ bool cpr_base64_decode(const char *text, size_t text_size, void *buf,
 			return false;
 		}
 
-		uint32_t n = ((uint32_t)v0 << 18) | ((uint32_t)v1 << 12);
+		uint32_t n = ((uint32_t)v0 << 18) | ((uint32_t)v1 << 12) |
+			     ((uint32_t)v2 << 6) | (uint32_t)v3;
 		*out++ = (uint8_t)(n >> 16);
 		*out++ = (uint8_t)(n >> 8);
 		*out++ = (uint8_t)n;

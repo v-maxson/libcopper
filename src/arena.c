@@ -32,7 +32,8 @@ CprArenaAllocator cpr_arena_alloc_default(void)
 
 static size_t cpr__align_up(size_t offset, size_t alignment)
 {
-	return (offset + (alignment - 1)) & ~(alignment - 1);
+	uintptr_t mask = (uintptr_t)alignment - 1;
+	return (offset + mask) & ~mask;
 }
 
 static int cpr__is_pow2(size_t v)
@@ -100,17 +101,24 @@ void *cpr_arena_alloc_aligned(CprArena *arena, size_t size, size_t alignment)
 	}
 
 	uintptr_t base = (uintptr_t)arena->buf;
-	size_t aligned_offset =
-		cpr__align_up(base + arena->offset, alignment) - base;
+	uintptr_t cursor = base + arena->offset;
 
-	if (size > arena->cap - aligned_offset) {
+	if ((uintptr_t)alignment - 1 > UINTPTR_MAX - cursor) {
+		cpr__set_error(CPR_ERR_EXHAUSTED, "arena exhausted");
+		return NULL;
+	}
+
+	size_t aligned_offset =
+		(size_t)(cpr__align_up(cursor, alignment) - base);
+
+	if (aligned_offset > arena->cap || size > arena->cap - aligned_offset) {
 		cpr__set_error(CPR_ERR_EXHAUSTED, "arena exhausted");
 		return NULL;
 	}
 
 	arena->prev_offset = arena->offset;
 	arena->offset = aligned_offset + size;
-	return arena->buf + aligned_offset;
+	return arena->buf;
 }
 
 void *cpr_arena_alloc(CprArena *arena, size_t size)

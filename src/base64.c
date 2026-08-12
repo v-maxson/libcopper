@@ -135,7 +135,7 @@ bool cpr_base64_decode(const char *text, size_t text_size, void *buf,
 
 	size_t pad = 0;
 	if (text_size % 4 == 0 && text[text_size - 1] == '=') {
-		pad = true;
+		pad = 1;
 		if (text[text_size - 2] == '=')
 			pad = 2;
 	}
